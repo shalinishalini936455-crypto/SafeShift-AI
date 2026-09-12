@@ -8,6 +8,10 @@ function Sidebar({ activePage, setActivePage }) {
     { name: "Safe Site Finder", icon: "📍" },
     { name: "Carrying Capacity", icon: "📊" },
     { name: "Relocation Simulator", icon: "🔄" },
+   {
+  name: "Long-Term Relocation Plan",
+  icon: "🏠"
+},
     { name: "Relocation Priority", icon: "🚨" },
     { name: "Action Plans", icon: "📋" },
     { name: "Field Reports", icon: "📢" },

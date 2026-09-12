@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect} from "react";
+import { getDashboard } from "./services/api";
 import Sidebar from "./components/Sidebar";
 import HazardMap from "./pages/HazardMap";
 import RedZoneManagement from "./pages/RedZoneManagement";
@@ -14,8 +15,10 @@ import Alerts from "./pages/Alerts";
 import Reports from "./pages/Reports";
 import AIAssistant from "./pages/AIAssistant";
 import Login from "./pages/Login";
+import LongTermRelocation from "./pages/LongTermRelocation";
 import "./App.css";
 function App() {
+  
   const [activePage, setActivePage] = useState("Dashboard");
 const [loggedIn, setLoggedIn] = useState(false);
 
@@ -82,6 +85,8 @@ const [loggedIn, setLoggedIn] = useState(false);
   <CarryingCapacity />
 ) : activePage === "Relocation Simulator" ? (
   <RelocationSimulator />
+) : activePage.trim() === "Long-Term Relocation Plan" ? (
+  <LongTermRelocation />
 ) : activePage === "Relocation Priority" ? (
   <RelocationPriority />
 ) : activePage === "Action Plans" ? (
@@ -106,6 +111,19 @@ const [loggedIn, setLoggedIn] = useState(false);
 /* DASHBOARD */
 
 function Dashboard() {
+  const [dashboardData, setDashboardData] = useState(null);
+
+  useEffect(() => {
+    getDashboard()
+      .then((response) => {
+        console.log("Dashboard API:", response.data);
+        setDashboardData(response.data);
+      })
+      .catch((error) => {
+        console.error("Dashboard API Error:", error);
+      });
+  }, []);
+
   return (
     <div className="dashboard">
 
