@@ -25,7 +25,10 @@ def get_dashboard():
         ).count()
 
         total_red_zones = db.query(RedZone).count()
-
+        red_zones_requiring_attention = db.query(RedZone).filter(
+    RedZone.severity == "Critical"
+).count()
+        
         total_safe_sites = db.query(SafeSite).count()
 
         safe_sites = db.query(SafeSite).all()
@@ -48,6 +51,7 @@ def get_dashboard():
             "total_habitations": total_habitations,
             "high_risk_habitations": high_risk_habitations,
             "total_red_zones": total_red_zones,
+            "red_zones_requiring_attention": red_zones_requiring_attention,
             "total_safe_sites": total_safe_sites,
             "available_safe_capacity": available_safe_capacity,
             "total_relocation_plans": total_relocation_plans,

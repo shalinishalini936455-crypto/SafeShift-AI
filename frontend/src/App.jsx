@@ -1,6 +1,6 @@
-import { useState, useEffect} from "react";
-import { getDashboard } from "./services/api";
-import Sidebar from "./components/Sidebar";
+import { useState, useEffect } from "react";
+import { getDashboard, getHabitations } from "./services/api";
+import Sidebar from "./Components/Sidebar";
 import HazardMap from "./pages/HazardMap";
 import RedZoneManagement from "./pages/RedZoneManagement";
 import ChangeDetection from "./pages/ChangeDetection";
@@ -17,10 +17,10 @@ import AIAssistant from "./pages/AIAssistant";
 import Login from "./pages/Login";
 import LongTermRelocation from "./pages/LongTermRelocation";
 import "./App.css";
+
 function App() {
-  
   const [activePage, setActivePage] = useState("Dashboard");
-const [loggedIn, setLoggedIn] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
 
   if (!loggedIn) {
     return <Login onLogin={() => setLoggedIn(true)} />;
@@ -46,6 +46,7 @@ const [loggedIn, setLoggedIn] = useState(false);
           </div>
 
           <div className="topbar-right">
+
             <div className="live-status">
               <span></span>
               LIVE MONITORING
@@ -64,250 +65,466 @@ const [loggedIn, setLoggedIn] = useState(false);
                 <small>Disaster Management</small>
               </div>
             </div>
+
           </div>
         </header>
 
-        {/* DASHBOARD */}
-      {activePage === "Dashboard" ? (
-  <Dashboard />
-) : activePage === "Live Hazard Map" ? (
-  <HazardMap />
-) : activePage === "Red Zone Management" ? (
-  <RedZoneManagement />
-) : activePage === "AI Change Detection" ? (
-  <ChangeDetection />
-) : activePage === "Habitations & Risk" ? (
-  <Habitations />
-) : activePage === "Safe Site Finder" ? (
-  <SafeSites />
-) : activePage.trim()
- === "Carrying Capacity" ? (
-  <CarryingCapacity />
-) : activePage === "Relocation Simulator" ? (
-  <RelocationSimulator />
-) : activePage.trim() === "Long-Term Relocation Plan" ? (
-  <LongTermRelocation />
-) : activePage === "Relocation Priority" ? (
-  <RelocationPriority />
-) : activePage === "Action Plans" ? (
-  <ActionPlans />
-) : activePage === "Field Reports" ? (
-  <FieldReports />
-) : activePage === "Alerts" ? (
-  <Alerts />
-) : activePage === "Reports & Analytics" ? (
-  <Reports />
-) : activePage === "AI Assistant" ? (
-  <AIAssistant />
-) : (
-  <ComingSoon page={activePage} />
-)}
+        {/* PAGES */}
+
+        {activePage === "Dashboard" ? (
+          <Dashboard />
+
+        ) : activePage === "Live Hazard Map" ? (
+          <HazardMap />
+
+        ) : activePage === "Red Zone Management" ? (
+          <RedZoneManagement />
+
+        ) : activePage === "AI Change Detection" ? (
+          <ChangeDetection />
+
+        ) : activePage === "Habitations & Risk" ? (
+          <Habitations />
+
+        ) : activePage === "Safe Site Finder" ? (
+          <SafeSites />
+
+        ) : activePage.trim() === "Carrying Capacity" ? (
+          <CarryingCapacity />
+
+        ) : activePage === "Relocation Simulator" ? (
+          <RelocationSimulator />
+
+        ) : activePage.trim() === "Long-Term Relocation Plan" ? (
+          <LongTermRelocation />
+
+        ) : activePage === "Relocation Priority" ? (
+          <RelocationPriority />
+
+        ) : activePage === "Action Plans" ? (
+          <ActionPlans />
+
+        ) : activePage === "Field Reports" ? (
+          <FieldReports />
+
+        ) : activePage === "Alerts" ? (
+          <Alerts />
+
+        ) : activePage === "Reports & Analytics" ? (
+          <Reports />
+
+        ) : activePage === "AI Assistant" ? (
+          <AIAssistant />
+
+        ) : (
+          <ComingSoon page={activePage} />
+        )}
+
       </main>
     </div>
   );
 }
 
 
-/* DASHBOARD */
+/* =========================================================
+   DASHBOARD
+========================================================= */
 
 function Dashboard() {
+
   const [dashboardData, setDashboardData] = useState(null);
 
+  const [peopleAtRisk, setPeopleAtRisk] = useState(null);
+
+
+  /* GET BACKEND DATA */
+
   useEffect(() => {
+
+    /* Dashboard API */
+
     getDashboard()
       .then((response) => {
+
         console.log("Dashboard API:", response.data);
+
         setDashboardData(response.data);
+
       })
       .catch((error) => {
+
         console.error("Dashboard API Error:", error);
+
       });
+
+
+    /* Habitations API */
+
+    getHabitations()
+      .then((response) => {
+
+        console.log("Habitations API:", response.data);
+
+        const totalPeople = response.data.reduce(
+          (total, habitation) =>
+            total + habitation.population,
+          0
+        );
+
+        setPeopleAtRisk(totalPeople);
+
+      })
+      .catch((error) => {
+
+        console.error("Habitations API Error:", error);
+
+      });
+
   }, []);
 
+
   return (
+
     <div className="dashboard">
 
-      {/* DEMO BANNER */}
+
+      {/* =====================================================
+          DEMO BANNER
+      ===================================================== */}
+
       <div className="demo-banner">
+
         <span>⚠️</span>
 
         <div>
+
           <strong>Prototype Monitoring Mode</strong>
 
           <p>
             Dashboard currently displays demo/simulated data.
             Connect the backend to display live system data.
           </p>
+
         </div>
+
       </div>
 
 
-      {/* STAT CARDS */}
+      {/* =====================================================
+          STAT CARDS
+      ===================================================== */}
 
       <div className="stats-grid">
 
+
+        {/* RED ZONES */}
+
         <div className="stat-card red">
+
           <div className="stat-top">
+
             <span>Red Zones</span>
-            <div className="stat-icon">🔴</div>
+
+            <div className="stat-icon">
+              🔴
+            </div>
+
           </div>
 
-          <h2>24</h2>
+          <h2>
+            {dashboardData
+              ? dashboardData.total_red_zones
+              : "..."}
+          </h2>
 
           <p>
-            <strong>3</strong> require immediate attention
-          </p>
+  <strong>
+    {dashboardData
+      ? dashboardData.red_zones_requiring_attention
+      : "..."}
+  </strong>{" "}
+  require immediate attention
+</p>
         </div>
 
 
+        {/* HIGH RISK HABITATIONS */}
+
         <div className="stat-card orange">
+
           <div className="stat-top">
+
             <span>High Risk Habitations</span>
-            <div className="stat-icon">🏘️</div>
+
+            <div className="stat-icon">
+              🏘️
+            </div>
+
           </div>
 
-          <h2>18</h2>
+          <h2>
+            {dashboardData
+              ? dashboardData.high_risk_habitations
+              : "..."}
+          </h2>
 
           <p>
             <strong>7</strong> marked for relocation
           </p>
+
         </div>
 
 
+        {/* PEOPLE AT RISK */}
+
         <div className="stat-card purple">
+
           <div className="stat-top">
+
             <span>People at Risk</span>
-            <div className="stat-icon">👥</div>
+
+            <div className="stat-icon">
+              👥
+            </div>
+
           </div>
 
-          <h2>12,540</h2>
+          <h2>
+            {peopleAtRisk !== null
+              ? peopleAtRisk.toLocaleString()
+              : "..."}
+          </h2>
 
           <p>
             Across monitored habitations
           </p>
+
         </div>
 
 
+        {/* SAFE SITES */}
+
         <div className="stat-card green">
+
           <div className="stat-top">
+
             <span>Safe Sites</span>
-            <div className="stat-icon">📍</div>
+
+            <div className="stat-icon">
+              📍
+            </div>
+
           </div>
 
-          <h2>12</h2>
+          <h2>
+            {dashboardData
+              ? dashboardData.total_safe_sites
+              : "..."}
+          </h2>
 
           <p>
-            <strong>8,420</strong> available capacity
+            <strong>
+              {dashboardData
+                ? dashboardData.available_safe_capacity.toLocaleString()
+                : "..."}
+            </strong>{" "}
+            available capacity
           </p>
+
         </div>
 
       </div>
 
 
-      {/* RELOCATION OVERVIEW */}
+      {/* =====================================================
+          RELOCATION OVERVIEW
+      ===================================================== */}
 
       <div className="section-heading">
+
         <div>
-          <h2>Relocation Overview</h2>
+
+          <h2>
+            Relocation Overview
+          </h2>
+
           <p>
             Current priority status across monitored areas
           </p>
+
         </div>
+
       </div>
 
 
       <div className="overview-grid">
 
+
+        {/* IMMEDIATE RELOCATION */}
+
         <div className="overview-card">
+
           <div className="overview-header">
-            <h3>Immediate Relocation</h3>
+
+            <h3>
+              Immediate Relocation
+            </h3>
+
             <span className="danger-badge">
               CRITICAL
             </span>
+
           </div>
 
-          <div className="big-number">7</div>
+          <div className="big-number">
+            7
+          </div>
 
           <p>
             Habitations requiring immediate assessment
           </p>
 
           <div className="progress">
-            <div style={{ width: "72%" }}></div>
+
+            <div
+              style={{
+                width: "72%"
+              }}
+            ></div>
+
           </div>
 
-          <small>72% priority score</small>
+          <small>
+            72% priority score
+          </small>
+
         </div>
 
 
+        {/* SHORT TERM RELOCATION */}
+
         <div className="overview-card">
+
           <div className="overview-header">
-            <h3>Short-Term Relocation</h3>
+
+            <h3>
+              Short-Term Relocation
+            </h3>
+
             <span className="warning-badge">
               HIGH
             </span>
+
           </div>
 
-          <div className="big-number">11</div>
+          <div className="big-number">
+            11
+          </div>
 
           <p>
             Habitations requiring action planning
           </p>
 
           <div className="progress">
-            <div style={{ width: "54%" }}></div>
+
+            <div
+              style={{
+                width: "54%"
+              }}
+            ></div>
+
           </div>
 
-          <small>54% priority score</small>
+          <small>
+            54% priority score
+          </small>
+
         </div>
 
 
+        {/* PENDING VERIFICATION */}
+
         <div className="overview-card">
+
           <div className="overview-header">
-            <h3>Pending Verification</h3>
+
+            <h3>
+              Pending Verification
+            </h3>
+
             <span className="info-badge">
               AI
             </span>
+
           </div>
 
-          <div className="big-number">6</div>
+          <div className="big-number">
+            6
+          </div>
 
           <p>
             AI detections awaiting field verification
           </p>
 
           <div className="progress">
-            <div style={{ width: "38%" }}></div>
+
+            <div
+              style={{
+                width: "38%"
+              }}
+            ></div>
+
           </div>
 
-          <small>Field verification required</small>
+          <small>
+            Field verification required
+          </small>
+
         </div>
 
       </div>
 
 
-      {/* LOWER SECTION */}
+      {/* =====================================================
+          LOWER SECTION
+      ===================================================== */}
 
       <div className="lower-grid">
+
+
+        {/* RECENT ALERTS */}
 
         <div className="activity-card">
 
           <div className="card-heading">
+
             <div>
-              <h3>Recent Alerts</h3>
-              <p>Latest system notifications</p>
+
+              <h3>
+                Recent Alerts
+              </h3>
+
+              <p>
+                Latest system notifications
+              </p>
+
             </div>
 
-            <button>View all</button>
+            <button>
+              View all
+            </button>
+
           </div>
 
 
           <div className="alert-row">
+
             <div className="alert-icon critical">
               !
             </div>
 
             <div>
+
               <strong>
                 New structure detected
               </strong>
@@ -315,18 +532,24 @@ function Dashboard() {
               <p>
                 Red Zone RZ-024 · AI confidence 94%
               </p>
+
             </div>
 
-            <span>5 min ago</span>
+            <span>
+              5 min ago
+            </span>
+
           </div>
 
 
           <div className="alert-row">
+
             <div className="alert-icon warning">
               !
             </div>
 
             <div>
+
               <strong>
                 High habitation risk
               </strong>
@@ -334,18 +557,24 @@ function Dashboard() {
               <p>
                 Village A · Risk score 91/100
               </p>
+
             </div>
 
-            <span>18 min ago</span>
+            <span>
+              18 min ago
+            </span>
+
           </div>
 
 
           <div className="alert-row">
+
             <div className="alert-icon info">
               i
             </div>
 
             <div>
+
               <strong>
                 Field verification pending
               </strong>
@@ -353,9 +582,13 @@ function Dashboard() {
               <p>
                 3 detections awaiting review
               </p>
+
             </div>
 
-            <span>32 min ago</span>
+            <span>
+              32 min ago
+            </span>
+
           </div>
 
         </div>
@@ -366,50 +599,111 @@ function Dashboard() {
         <div className="risk-card">
 
           <div className="card-heading">
+
             <div>
-              <h3>Risk Distribution</h3>
-              <p>Monitored habitation status</p>
+
+              <h3>
+                Risk Distribution
+              </h3>
+
+              <p>
+                Monitored habitation status
+              </p>
+
             </div>
+
           </div>
 
 
           <div className="risk-item">
-            <span>Critical</span>
-            <strong>7</strong>
+
+            <span>
+              Critical
+            </span>
+
+            <strong>
+              7
+            </strong>
 
             <div className="risk-bar">
-              <div style={{ width: "25%" }}></div>
+
+              <div
+                style={{
+                  width: "25%"
+                }}
+              ></div>
+
             </div>
+
           </div>
 
 
           <div className="risk-item">
-            <span>High</span>
-            <strong>11</strong>
+
+            <span>
+              High
+            </span>
+
+            <strong>
+              11
+            </strong>
 
             <div className="risk-bar">
-              <div style={{ width: "45%" }}></div>
+
+              <div
+                style={{
+                  width: "45%"
+                }}
+              ></div>
+
             </div>
+
           </div>
 
 
           <div className="risk-item">
-            <span>Medium</span>
-            <strong>18</strong>
+
+            <span>
+              Medium
+            </span>
+
+            <strong>
+              18
+            </strong>
 
             <div className="risk-bar">
-              <div style={{ width: "65%" }}></div>
+
+              <div
+                style={{
+                  width: "65%"
+                }}
+              ></div>
+
             </div>
+
           </div>
 
 
           <div className="risk-item">
-            <span>Low</span>
-            <strong>26</strong>
+
+            <span>
+              Low
+            </span>
+
+            <strong>
+              26
+            </strong>
 
             <div className="risk-bar">
-              <div style={{ width: "85%" }}></div>
+
+              <div
+                style={{
+                  width: "85%"
+                }}
+              ></div>
+
             </div>
+
           </div>
 
         </div>
@@ -417,18 +711,28 @@ function Dashboard() {
       </div>
 
     </div>
+
   );
 }
 
 
-/* OTHER PAGES */
+/* =========================================================
+   COMING SOON
+========================================================= */
 
 function ComingSoon({ page }) {
-  return (
-    <div className="coming-soon">
-      <div className="coming-icon">🚧</div>
 
-      <h2>{page}</h2>
+  return (
+
+    <div className="coming-soon">
+
+      <div className="coming-icon">
+        🚧
+      </div>
+
+      <h2>
+        {page}
+      </h2>
 
       <p>
         This module is ready to be connected
@@ -438,8 +742,11 @@ function ComingSoon({ page }) {
       <span>
         Frontend module — development in progress
       </span>
+
     </div>
+
   );
 }
+
 
 export default App;

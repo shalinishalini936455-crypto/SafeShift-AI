@@ -1,44 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  getHabitations,
+  getRedZones,
+  getSafeSites,
+} from "../services/api";
 
 function ActionPlans() {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [habitations, setHabitations] = useState([]);
+  const [redZones, setRedZones] = useState([]);
+  const [safeSites, setSafeSites] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState("");
 
-  const [plans, setPlans] = useState([
-    {
-      id: "ACT-001",
-      title: "Emergency Relocation – Hill View Colony",
-      location: "Hill View Colony",
-      hazard: "Landslide",
-      priority: "Immediate",
-      people: 1250,
-      destination: "Government Higher Secondary School",
-      status: "Approved",
-      progress: 70,
-    },
-    {
-      id: "ACT-002",
-      title: "Flood Evacuation – River Bank Area",
-      location: "River Bank Area",
-      hazard: "Flood",
-      priority: "Immediate",
-      people: 980,
-      destination: "Community Relief Centre",
-      status: "In Progress",
-      progress: 50,
-    },
-    {
-      id: "ACT-003",
-      title: "Preparedness Plan – Green Valley",
-      location: "Green Valley",
-      hazard: "Flood",
-      priority: "High",
-      people: 760,
-      destination: "Government School",
-      status: "Pending Approval",
-      progress: 0,
-    },
-  ]);
+  const [plans, setPlans] = useState([]);
 
   const [form, setForm] = useState({
     title: "",
@@ -48,6 +24,99 @@ function ActionPlans() {
     people: "",
     destination: "",
   });
+
+  useEffect(() => {
+    Promise.all([
+      getHabitations(),
+      getRedZones(),
+      getSafeSites(),
+    ])
+      .then(([habitationResponse, redZoneResponse, safeSiteResponse]) => {
+        const habitationsData = habitationResponse.data || [];
+        const redZonesData = redZoneResponse.data || [];
+        const safeSitesData = safeSiteResponse.data || [];
+
+        setHabitations(habitationsData);
+        setRedZones(redZonesData);
+        setSafeSites(safeSitesData);
+
+        const generatedPlans = habitationsData
+          .map((habitation) => {
+            const districtZone = redZonesData.find(
+              (zone) => zone.district === habitation.district
+            );
+
+            const safeSite = safeSitesData.find(
+              (site) =>
+                Number(site.available_capacity || 0) >=
+                Number(habitation.population || 0)
+            );
+
+            let priority = "Medium";
+
+            if (habitation.risk_level === "Critical") {
+              priority = "Immediate";
+            } else if (habitation.risk_level === "High") {
+              priority = "High";
+            } else if (habitation.risk_level === "Medium") {
+              priority = "Medium";
+            } else {
+              priority = "Low";
+            }
+
+            let status = "Pending Approval";
+
+            if (priority === "Immediate") {
+              status = "Approved";
+            }
+
+            return {
+              id: `ACT-${String(habitation.id).padStart(3, "0")}`,
+              title:
+                priority === "Immediate"
+                  ? `Emergency Relocation – ${habitation.name}`
+                  : `Relocation Action – ${habitation.name}`,
+              location: habitation.name,
+              district: habitation.district,
+              hazard: districtZone
+                ? districtZone.hazard_type
+                : "Not available",
+              priority,
+              people: Number(habitation.population || 0),
+              destination: safeSite
+                ? safeSite.site_name
+                : "No suitable safe site available",
+              status,
+              progress: status === "Approved" ? 0 : 0,
+              riskLevel: habitation.risk_level,
+              severity: districtZone
+                ? districtZone.severity
+                : "Not available",
+            };
+          })
+          .sort((a, b) => {
+            const order = {
+              Immediate: 1,
+              High: 2,
+              Medium: 3,
+              Low: 4,
+            };
+
+            return order[a.priority] - order[b.priority];
+          });
+
+        setPlans(generatedPlans);
+      })
+      .catch((error) => {
+        console.error("Action Plans API Error:", error);
+        setApiError(
+          "Unable to load backend data. Please check that the backend is running."
+        );
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
 
   const handleChange = (e) => {
     setForm({
@@ -79,6 +148,8 @@ function ActionPlans() {
       destination: form.destination,
       status: "Pending Approval",
       progress: 0,
+      riskLevel: form.priority,
+      severity: form.priority,
     };
 
     setPlans([...plans, newPlan]);
@@ -143,7 +214,7 @@ function ActionPlans() {
   };
 
   const totalPeople = plans.reduce(
-    (total, plan) => total + plan.people,
+    (total, plan) => total + Number(plan.people || 0),
     0
   );
 
@@ -232,8 +303,8 @@ function ActionPlans() {
               </p>
             </div>
 
-            <span style={styles.demoBadge}>
-              DEMO MODE
+            <span style={styles.backendBadge}>
+              BACKEND DATA
             </span>
           </div>
 
@@ -351,7 +422,20 @@ function ActionPlans() {
 
         <div style={styles.planList}>
 
-          {plans.map((plan) => (
+          {loading ? (
+            <div style={styles.emptyMessage}>
+              Loading action plans from backend...
+            </div>
+          ) : apiError ? (
+            <div style={styles.emptyMessage}>
+              {apiError}
+            </div>
+          ) : plans.length === 0 ? (
+            <div style={styles.emptyMessage}>
+              No action plans available.
+            </div>
+          ) : (
+            plans.map((plan) => (
 
             <div
               key={plan.id}
@@ -485,7 +569,8 @@ function ActionPlans() {
 
             </div>
 
-          ))}
+            ))
+          )}
 
         </div>
       </div>
@@ -999,6 +1084,23 @@ const styles = {
     borderRadius: "6px",
     fontSize: "10px",
     fontWeight: "800",
+  },
+
+
+  backendBadge: {
+    background: "#dcfce7",
+    color: "#166534",
+    padding: "7px 10px",
+    borderRadius: "6px",
+    fontSize: "10px",
+    fontWeight: "800",
+  },
+
+  emptyMessage: {
+    padding: "35px 24px",
+    textAlign: "center",
+    color: "#64748b",
+    fontSize: "13px",
   },
 
   formGrid: {

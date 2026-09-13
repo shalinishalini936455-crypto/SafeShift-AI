@@ -1,37 +1,42 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getRedZones } from "../services/api";
 
 function RedZoneManagement() {
   const [showForm, setShowForm] = useState(false);
+  const [zones, setZones] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
 
-  const zones = [
-    {
-      id: "RZ-024",
-      name: "Hill View Zone",
-      hazard: "Landslide",
-      severity: "Critical",
-      area: "2.8 km²",
-      population: "1,240",
-      status: "Active",
-    },
-    {
-      id: "RZ-018",
-      name: "River Bank Zone",
-      hazard: "Flood",
-      severity: "High",
-      area: "4.2 km²",
-      population: "980",
-      status: "Active",
-    },
-    {
-      id: "RZ-011",
-      name: "Lowland Area",
-      hazard: "Flood",
-      severity: "Medium",
-      area: "1.9 km²",
-      population: "560",
-      status: "Under Review",
-    },
-  ];
+  useEffect(() => {
+    getRedZones()
+      .then((response) => {
+        console.log("Red Zones API:", response.data);
+        setZones(response.data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Red Zones API Error:", error);
+        setError("Unable to load red zone data");
+        setLoading(false);
+      });
+  }, []);
+
+  const totalZones = zones.length;
+
+  const criticalZones = zones.filter(
+    (zone) => zone.severity === "Critical"
+  ).length;
+
+  const highZones = zones.filter(
+    (zone) => zone.severity === "High"
+  ).length;
+
+  const filteredZones = zones.filter((zone) =>
+    `${zone.zone_name} ${zone.district} ${zone.hazard_type}`
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
 
   return (
     <div className="redzone-page">
@@ -52,7 +57,6 @@ function RedZoneManagement() {
         </button>
       </div>
 
-
       {/* FORM */}
 
       {showForm && (
@@ -71,7 +75,6 @@ function RedZoneManagement() {
               ✕
             </button>
           </div>
-
 
           <div className="form-grid">
 
@@ -114,32 +117,10 @@ function RedZoneManagement() {
               <input placeholder="Enter longitude" />
             </div>
 
-            <div>
-              <label>Affected Area</label>
-              <input placeholder="Example: 2.5 km²" />
-            </div>
-
-            <div>
-              <label>Effective Date</label>
-              <input type="date" />
-            </div>
-
-            <div>
-              <label>Review Date</label>
-              <input type="date" />
-            </div>
-
-            <div className="full-width">
-              <label>Reason</label>
-              <textarea
-                placeholder="Enter reason for declaring this red zone"
-                rows="3"
-              ></textarea>
-            </div>
-
           </div>
 
           <div className="form-actions">
+
             <button
               className="cancel-btn"
               onClick={() => setShowForm(false)}
@@ -150,11 +131,11 @@ function RedZoneManagement() {
             <button className="primary-btn">
               Declare Zone
             </button>
+
           </div>
 
         </div>
       )}
-
 
       {/* SUMMARY */}
 
@@ -162,32 +143,50 @@ function RedZoneManagement() {
 
         <div>
           <span>Total Red Zones</span>
-          <strong>24</strong>
+          <strong>
+            {loading ? "..." : totalZones}
+          </strong>
         </div>
 
         <div>
           <span>Critical</span>
-          <strong className="critical-number">7</strong>
+          <strong className="critical-number">
+            {loading ? "..." : criticalZones}
+          </strong>
         </div>
 
         <div>
           <span>High Risk</span>
-          <strong className="high-number">11</strong>
+          <strong className="high-number">
+            {loading ? "..." : highZones}
+          </strong>
         </div>
 
         <div>
-          <span>Under Review</span>
-          <strong>6</strong>
+          <span>Other</span>
+          <strong>
+            {loading
+              ? "..."
+              : totalZones - criticalZones - highZones}
+          </strong>
         </div>
 
       </div>
 
+      {/* ERROR */}
+
+      {error && (
+        <p style={{ color: "red" }}>
+          {error}
+        </p>
+      )}
 
       {/* TABLE */}
 
       <div className="zone-table-card">
 
         <div className="table-header">
+
           <div>
             <h3>Declared Red Zones</h3>
             <p>Current monitored zones</p>
@@ -196,78 +195,77 @@ function RedZoneManagement() {
           <input
             className="search-input"
             placeholder="Search zone..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
-        </div>
 
+        </div>
 
         <div className="table-wrapper">
 
-          <table>
+          {loading ? (
+            <p>Loading red zone data...</p>
+          ) : (
+            <table>
 
-            <thead>
-              <tr>
-                <th>Zone ID</th>
-                <th>Zone Name</th>
-                <th>Hazard</th>
-                <th>Severity</th>
-                <th>Area</th>
-                <th>Population</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-
-            <tbody>
-
-              {zones.map((zone) => (
-
-                <tr key={zone.id}>
-
-                  <td>
-                    <strong>{zone.id}</strong>
-                  </td>
-
-                  <td>{zone.name}</td>
-
-                  <td>{zone.hazard}</td>
-
-                  <td>
-                    <span
-                      className={`severity ${zone.severity.toLowerCase()}`}
-                    >
-                      {zone.severity}
-                    </span>
-                  </td>
-
-                  <td>{zone.area}</td>
-
-                  <td>{zone.population}</td>
-
-                  <td>
-                    <span
-                      className={`zone-status ${
-                        zone.status === "Active"
-                          ? "active"
-                          : "review"
-                      }`}
-                    >
-                      {zone.status}
-                    </span>
-                  </td>
-
-                  <td>
-                    <button className="view-btn">
-                      View
-                    </button>
-                  </td>
-
+              <thead>
+                <tr>
+                  <th>Zone ID</th>
+                  <th>Zone Name</th>
+                  <th>District</th>
+                  <th>Hazard</th>
+                  <th>Severity</th>
+                  <th>Latitude</th>
+                  <th>Longitude</th>
                 </tr>
+              </thead>
 
-              ))}
+              <tbody>
 
-            </tbody>
+                {filteredZones.map((zone) => (
 
-          </table>
+                  <tr key={zone.id}>
+
+                    <td>
+                      <strong>RZ-{zone.id}</strong>
+                    </td>
+
+                    <td>
+                      {zone.zone_name}
+                    </td>
+
+                    <td>
+                      {zone.district}
+                    </td>
+
+                    <td>
+                      {zone.hazard_type}
+                    </td>
+
+                    <td>
+                      <span
+                        className={`severity ${zone.severity.toLowerCase()}`}
+                      >
+                        {zone.severity}
+                      </span>
+                    </td>
+
+                    <td>
+                      {zone.latitude}
+                    </td>
+
+                    <td>
+                      {zone.longitude}
+                    </td>
+
+                  </tr>
+
+                ))}
+
+              </tbody>
+
+            </table>
+          )}
 
         </div>
 

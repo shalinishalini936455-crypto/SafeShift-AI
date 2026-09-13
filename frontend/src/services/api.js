@@ -7,15 +7,20 @@ const API = axios.create({
   },
 });
 
-export const healthCheck = () => API.get("/api/health");
+export const healthCheck = () =>
+  API.get("/api/health");
 
-export const getDashboard = () => API.get("/api/dashboard/");
+export const getDashboard = () =>
+  API.get("/api/dashboard/");
 
-export const getHabitations = () => API.get("/api/habitations/");
+export const getHabitations = () =>
+  API.get("/api/habitations/");
 
-export const getRedZones = () => API.get("/api/red-zones/");
+export const getRedZones = () =>
+  API.get("/api/red-zones/");
 
-export const getSafeSites = () => API.get("/api/safe-sites/");
+export const getSafeSites = () =>
+  API.get("/api/safe-sites/");
 
 export const getRelocationPlans = () =>
   API.get("/api/relocation/plans");
@@ -31,5 +36,9 @@ export const getRiskReport = () =>
 
 export const getRelocationReport = () =>
   API.get("/api/reports/relocation");
+
+/* Real-time weather from Open-Meteo */
+export const getWeather = () =>
+  API.get("/api/weather");
 
 export default API;

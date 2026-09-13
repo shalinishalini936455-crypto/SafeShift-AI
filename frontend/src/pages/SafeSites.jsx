@@ -1,50 +1,41 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getSafeSites } from "../services/api";
 
 function SafeSites() {
   const [selected, setSelected] = useState(null);
+  const [safeSites, setSafeSites] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const safeSites = [
-    {
-      id: "SAFE-001",
-      name: "Government Higher Secondary School",
-      location: "Salem North",
-      type: "School",
-      capacity: 1500,
-      available: 900,
-      distance: "2.4 km",
-      status: "Available"
-    },
-    {
-      id: "SAFE-002",
-      name: "District Community Hall",
-      location: "Salem Central",
-      type: "Community Hall",
-      capacity: 1000,
-      available: 650,
-      distance: "3.1 km",
-      status: "Available"
-    },
-    {
-      id: "SAFE-003",
-      name: "Municipal Sports Complex",
-      location: "Salem East",
-      type: "Sports Complex",
-      capacity: 2000,
-      available: 400,
-      distance: "4.8 km",
-      status: "Limited"
-    },
-    {
-      id: "SAFE-004",
-      name: "Government College Campus",
-      location: "Salem South",
-      type: "College",
-      capacity: 2500,
-      available: 1800,
-      distance: "5.2 km",
-      status: "Available"
-    }
-  ];
+  useEffect(() => {
+    getSafeSites()
+      .then((response) => {
+        console.log("Safe Sites API:", response.data);
+        setSafeSites(response.data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Safe Sites API Error:", error);
+        setError("Unable to load safe site data");
+        setLoading(false);
+      });
+  }, []);
+
+  const totalSites = safeSites.length;
+
+  const totalCapacity = safeSites.reduce(
+    (total, site) => total + (site.capacity || 0),
+    0
+  );
+
+  const availableSpaces = safeSites.reduce(
+    (total, site) => total + (site.available_capacity || 0),
+    0
+  );
+
+  const availableSites = safeSites.filter(
+    (site) => (site.available_capacity || 0) > 0
+  ).length;
 
   return (
     <div className="habitations-page">
@@ -62,11 +53,18 @@ function SafeSites() {
         </div>
 
         <div className="demo-badge">
-          DEMO DATA
+          BACKEND DATA
         </div>
 
       </div>
 
+      {/* ERROR */}
+
+      {error && (
+        <p style={{ color: "red" }}>
+          {error}
+        </p>
+      )}
 
       {/* SUMMARY */}
 
@@ -74,26 +72,33 @@ function SafeSites() {
 
         <div className="summary-card">
           <span>Total Safe Sites</span>
-          <strong>24</strong>
+          <strong>
+            {loading ? "..." : totalSites}
+          </strong>
         </div>
 
         <div className="summary-card">
           <span>Total Capacity</span>
-          <strong>18,500</strong>
+          <strong>
+            {loading ? "..." : totalCapacity.toLocaleString()}
+          </strong>
         </div>
 
         <div className="summary-card">
           <span>Available Spaces</span>
-          <strong>11,240</strong>
+          <strong>
+            {loading ? "..." : availableSpaces.toLocaleString()}
+          </strong>
         </div>
 
         <div className="summary-card">
           <span>Available Sites</span>
-          <strong>18</strong>
+          <strong>
+            {loading ? "..." : availableSites}
+          </strong>
         </div>
 
       </div>
-
 
       {/* TABLE */}
 
@@ -109,96 +114,88 @@ function SafeSites() {
 
         </div>
 
-
         <div className="table-wrapper">
 
-          <table>
+          {loading ? (
+            <p>Loading safe site data...</p>
+          ) : (
+            <table>
 
-            <thead>
+              <thead>
 
-              <tr>
-                <th>ID</th>
-                <th>Safe Site</th>
-                <th>Type</th>
-                <th>Capacity</th>
-                <th>Available</th>
-                <th>Distance</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-
-            </thead>
-
-
-            <tbody>
-
-              {safeSites.map((site) => (
-
-                <tr key={site.id}>
-
-                  <td>{site.id}</td>
-
-                  <td>
-                    <strong>{site.name}</strong>
-
-                    <small>
-                      {site.location}
-                    </small>
-                  </td>
-
-                  <td>
-                    {site.type}
-                  </td>
-
-                  <td>
-                    {site.capacity.toLocaleString()}
-                  </td>
-
-                  <td>
-                    {site.available.toLocaleString()}
-                  </td>
-
-                  <td>
-                    {site.distance}
-                  </td>
-
-                  <td>
-
-                    <span
-                      className={
-                        site.status === "Available"
-                          ? "risk-badge medium"
-                          : "risk-badge high"
-                      }
-                    >
-                      {site.status}
-                    </span>
-
-                  </td>
-
-                  <td>
-
-                    <button
-                      className="view-btn"
-                      onClick={() => setSelected(site)}
-                    >
-                      View
-                    </button>
-
-                  </td>
-
+                <tr>
+                  <th>ID</th>
+                  <th>Safe Site</th>
+                  <th>District</th>
+                  <th>Capacity</th>
+                  <th>Available</th>
+                  <th>Safety Level</th>
+                  <th>Action</th>
                 </tr>
 
-              ))}
+              </thead>
 
-            </tbody>
+              <tbody>
 
-          </table>
+                {safeSites.map((site) => (
+
+                  <tr key={site.id}>
+
+                    <td>
+                      SAFE-{String(site.id).padStart(3, "0")}
+                    </td>
+
+                    <td>
+                      <strong>{site.site_name}</strong>
+
+                      <small>
+                        {site.district}
+                      </small>
+                    </td>
+
+                    <td>
+                      {site.district}
+                    </td>
+
+                    <td>
+                      {(site.capacity || 0).toLocaleString()}
+                    </td>
+
+                    <td>
+                      {(site.available_capacity || 0).toLocaleString()}
+                    </td>
+
+                    <td>
+
+                      <span className="risk-badge medium">
+                        {site.safety_level}
+                      </span>
+
+                    </td>
+
+                    <td>
+
+                      <button
+                        className="view-btn"
+                        onClick={() => setSelected(site)}
+                      >
+                        View
+                      </button>
+
+                    </td>
+
+                  </tr>
+
+                ))}
+
+              </tbody>
+
+            </table>
+          )}
 
         </div>
 
       </div>
-
 
       {/* DETAILS */}
 
@@ -208,54 +205,48 @@ function SafeSites() {
 
           <h3>Safe Site Details</h3>
 
-          <h2>{selected.name}</h2>
-
+          <h2>{selected.site_name}</h2>
 
           <div className="analysis-item">
             <span>Site ID</span>
-            <strong>{selected.id}</strong>
+            <strong>
+              SAFE-{String(selected.id).padStart(3, "0")}
+            </strong>
           </div>
-
 
           <div className="analysis-item">
-            <span>Location</span>
-            <strong>{selected.location}</strong>
+            <span>District</span>
+            <strong>{selected.district}</strong>
           </div>
-
-
-          <div className="analysis-item">
-            <span>Site Type</span>
-            <strong>{selected.type}</strong>
-          </div>
-
 
           <div className="analysis-item">
             <span>Total Capacity</span>
             <strong>
-              {selected.capacity.toLocaleString()}
+              {(selected.capacity || 0).toLocaleString()}
             </strong>
           </div>
-
 
           <div className="analysis-item">
             <span>Available Spaces</span>
             <strong>
-              {selected.available.toLocaleString()}
+              {(selected.available_capacity || 0).toLocaleString()}
             </strong>
           </div>
 
-
           <div className="analysis-item">
-            <span>Distance</span>
-            <strong>{selected.distance}</strong>
+            <span>Latitude</span>
+            <strong>{selected.latitude}</strong>
           </div>
 
-
           <div className="analysis-item">
-            <span>Status</span>
-            <strong>{selected.status}</strong>
+            <span>Longitude</span>
+            <strong>{selected.longitude}</strong>
           </div>
 
+          <div className="analysis-item">
+            <span>Safety Level</span>
+            <strong>{selected.safety_level}</strong>
+          </div>
 
           <button
             className="primary-action"

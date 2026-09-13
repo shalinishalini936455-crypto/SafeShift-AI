@@ -1,59 +1,31 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./RelocationSimulator.css";
+import { getHabitations, getSafeSites } from "../services/api";
 
 function RelocationSimulator() {
+  const [habitations, setHabitations] = useState([]);
+  const [safeSites, setSafeSites] = useState([]);
+
   const [habitation, setHabitation] = useState("");
   const [people, setPeople] = useState("");
   const [site, setSite] = useState("");
   const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const habitations = [
-    {
-      name: "Hill View Colony",
-      population: 1250,
-      risk: "Critical",
-      score: 91,
-    },
-    {
-      name: "River Bank Area",
-      population: 980,
-      risk: "High",
-      score: 84,
-    },
-    {
-      name: "Green Valley",
-      population: 760,
-      risk: "Medium",
-      score: 68,
-    },
-  ];
-
-  const safeSites = [
-    {
-      name: "Government Higher Secondary School",
-      available: 900,
-      capacity: 1500,
-      distance: "2.4 km",
-    },
-    {
-      name: "District Community Hall",
-      available: 650,
-      capacity: 1000,
-      distance: "3.1 km",
-    },
-    {
-      name: "Municipal Sports Complex",
-      available: 400,
-      capacity: 2000,
-      distance: "4.8 km",
-    },
-    {
-      name: "Government College Campus",
-      available: 1800,
-      capacity: 2500,
-      distance: "5.2 km",
-    },
-  ];
+  // Load backend data
+  useEffect(() => {
+    Promise.all([getHabitations(), getSafeSites()])
+      .then(([habitationResponse, siteResponse]) => {
+        setHabitations(habitationResponse.data);
+        setSafeSites(siteResponse.data);
+      })
+      .catch((error) => {
+        console.error("Relocation Simulator API Error:", error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
 
   function handleHabitationChange(e) {
     const value = e.target.value;
@@ -84,27 +56,37 @@ function RelocationSimulator() {
     }
 
     const selectedSite = safeSites.find(
-      (item) => item.name === site
+      (item) => item.site_name === site
     );
 
     const selectedHabitation = habitations.find(
       (item) => item.name === habitation
     );
 
-    const required = Number(people);
+    if (!selectedSite || !selectedHabitation) {
+      setResult({
+        type: "danger",
+        title: "Data Not Found",
+        message:
+          "The selected habitation or safe site could not be found in the backend.",
+      });
+      return;
+    }
 
-    if (required <= selectedSite.available) {
+    const required = Number(people);
+    const available = Number(selectedSite.available_capacity || 0);
+
+    if (required <= available) {
       setResult({
         type: "success",
         title: "Relocation Recommended",
         message:
           "The selected safe site has sufficient capacity for the planned relocation.",
         required: required,
-        available: selectedSite.available,
-        remaining: selectedSite.available - required,
-        risk: selectedHabitation.risk,
-        score: selectedHabitation.score,
-        distance: selectedSite.distance,
+        available: available,
+        remaining: available - required,
+        risk: selectedHabitation.risk_level,
+        score: null,
       });
     } else {
       setResult({
@@ -113,22 +95,37 @@ function RelocationSimulator() {
         message:
           "The selected safe site cannot accommodate all people in this scenario.",
         required: required,
-        available: selectedSite.available,
+        available: available,
         remaining: 0,
-        risk: selectedHabitation.risk,
-        score: selectedHabitation.score,
-        distance: selectedSite.distance,
+        risk: selectedHabitation.risk_level,
+        score: null,
       });
     }
   }
+
+  const totalCapacity = safeSites.reduce(
+    (total, site) =>
+      total + Number(site.capacity || 0),
+    0
+  );
+
+  const availableCapacity = safeSites.reduce(
+    (total, site) =>
+      total + Number(site.available_capacity || 0),
+    0
+  );
+
+  const highRiskHabitations = habitations.filter(
+    (item) =>
+      item.risk_level === "Critical" ||
+      item.risk_level === "High"
+  ).length;
 
   return (
     <div className="relocation-page">
 
       {/* HEADER */}
-
       <div className="relocation-header">
-
         <div>
           <span className="page-label">
             DECISION SUPPORT
@@ -137,161 +134,146 @@ function RelocationSimulator() {
           <h1>Relocation Simulator</h1>
 
           <p>
-            Simulate evacuation scenarios and evaluate safe-site capacity
+            Simulate evacuation scenarios using monitored
+            habitation and safe-site data.
           </p>
         </div>
 
         <div className="simulation-status">
           <span className="status-dot"></span>
-          SIMULATION MODE
+          BACKEND CONNECTED
         </div>
-
       </div>
 
-
       {/* SCENARIO CARD */}
-
       <div className="scenario-card">
 
         <div className="scenario-header">
-
           <div>
             <h2>Relocation Scenario</h2>
 
             <p>
-              Configure a relocation scenario using monitored
-              habitation and safe-site data.
+              Configure a relocation scenario using
+              backend habitation and safe-site data.
             </p>
           </div>
 
           <span className="demo-badge">
-            DEMO DATA
+            BACKEND DATA
           </span>
-
         </div>
 
+        {loading ? (
+          <div className="field-info">
+            Loading habitation and safe-site data...
+          </div>
+        ) : (
+          <div className="scenario-grid">
 
-        {/* FORM */}
+            {/* HABITATION */}
+            <div className="field-group">
 
-        <div className="scenario-grid">
+              <label>
+                Source Habitation
+              </label>
 
-          {/* HABITATION */}
-
-          <div className="field-group">
-
-            <label>
-              Source Habitation
-            </label>
-
-            <select
-              value={habitation}
-              onChange={handleHabitationChange}
-            >
-
-              <option value="">
-                Select habitation
-              </option>
-
-              {habitations.map((item) => (
-                <option
-                  key={item.name}
-                  value={item.name}
-                >
-                  {item.name} — {item.risk} Risk
+              <select
+                value={habitation}
+                onChange={handleHabitationChange}
+              >
+                <option value="">
+                  Select habitation
                 </option>
-              ))}
 
-            </select>
+                {habitations.map((item) => (
+                  <option
+                    key={item.id}
+                    value={item.name}
+                  >
+                    {item.name} — {item.risk_level} Risk
+                  </option>
+                ))}
+              </select>
 
-            {habitation && (
+              {habitation && (
+                <div className="field-info">
+                  Population loaded from backend
+                </div>
+              )}
+
+            </div>
+
+            {/* PEOPLE */}
+            <div className="field-group">
+
+              <label>
+                People to Relocate
+              </label>
+
+              <input
+                type="number"
+                min="1"
+                value={people}
+                onChange={(e) => {
+                  setPeople(e.target.value);
+                  setResult(null);
+                }}
+                placeholder="Enter number of people"
+              />
+
               <div className="field-info">
-                Selected habitation
+                Population requiring relocation
               </div>
-            )}
 
-          </div>
-
-
-          {/* PEOPLE */}
-
-          <div className="field-group">
-
-            <label>
-              People to Relocate
-            </label>
-
-            <input
-              type="number"
-              min="1"
-              value={people}
-              onChange={(e) => {
-                setPeople(e.target.value);
-                setResult(null);
-              }}
-              placeholder="Enter number of people"
-            />
-
-            <div className="field-info">
-              Population requiring relocation
             </div>
 
-          </div>
+            {/* SAFE SITE */}
+            <div className="field-group">
 
+              <label>
+                Destination Safe Site
+              </label>
 
-          {/* SAFE SITE */}
-
-          <div className="field-group">
-
-            <label>
-              Destination Safe Site
-            </label>
-
-            <select
-              value={site}
-              onChange={(e) => {
-                setSite(e.target.value);
-                setResult(null);
-              }}
-            >
-
-              <option value="">
-                Select safe site
-              </option>
-
-              {safeSites.map((item) => (
-                <option
-                  key={item.name}
-                  value={item.name}
-                >
-                  {item.name} — {item.available} available
+              <select
+                value={site}
+                onChange={(e) => {
+                  setSite(e.target.value);
+                  setResult(null);
+                }}
+              >
+                <option value="">
+                  Select safe site
                 </option>
-              ))}
 
-            </select>
+                {safeSites.map((item) => (
+  <option
+    key={item.id}
+    value={item.site_name}
+  >
+    {item.site_name} — {item.available_capacity} available
+  </option>
+))}
+              </select>
 
-            <div className="field-info">
-              Available accommodation capacity
+              <div className="field-info">
+                Available accommodation capacity
+              </div>
+
             </div>
 
           </div>
-
-        </div>
-
+        )}
 
         {/* SELECTED DATA */}
-
         {habitation && site && (
-
           <div className="selection-preview">
 
             <div className="preview-item">
-
               <span>Source</span>
 
               <strong>
                 {habitation}
               </strong>
-
             </div>
 
             <div className="preview-arrow">
@@ -299,23 +281,20 @@ function RelocationSimulator() {
             </div>
 
             <div className="preview-item">
-
               <span>Destination</span>
 
               <strong>
                 {site}
               </strong>
-
             </div>
 
           </div>
-
         )}
-
 
         <button
           className="simulate-button"
           onClick={runSimulation}
+          disabled={loading}
         >
           <span>▶</span>
           Run Relocation Simulation
@@ -323,11 +302,8 @@ function RelocationSimulator() {
 
       </div>
 
-
       {/* RESULT */}
-
       {result && (
-
         <div
           className={`result-card ${result.type}`}
         >
@@ -335,17 +311,15 @@ function RelocationSimulator() {
           <div className="result-top">
 
             <div className="result-icon">
-
               {result.type === "success"
                 ? "✓"
                 : "!"}
-
             </div>
 
             <div>
 
               <span className="result-label">
-                AI ASSESSMENT
+                RELOCATION ASSESSMENT
               </span>
 
               <h2>
@@ -360,13 +334,10 @@ function RelocationSimulator() {
 
           </div>
 
-
           {result.required !== undefined && (
-
             <div className="result-metrics">
 
               <div className="result-metric">
-
                 <span>
                   People
                 </span>
@@ -374,12 +345,9 @@ function RelocationSimulator() {
                 <strong>
                   {result.required.toLocaleString()}
                 </strong>
-
               </div>
 
-
               <div className="result-metric">
-
                 <span>
                   Site Available
                 </span>
@@ -387,12 +355,9 @@ function RelocationSimulator() {
                 <strong>
                   {result.available.toLocaleString()}
                 </strong>
-
               </div>
 
-
               <div className="result-metric">
-
                 <span>
                   Remaining
                 </span>
@@ -400,29 +365,22 @@ function RelocationSimulator() {
                 <strong>
                   {result.remaining.toLocaleString()}
                 </strong>
-
               </div>
 
-
               <div className="result-metric">
-
                 <span>
-                  Risk Score
+                  Risk Level
                 </span>
 
                 <strong>
-                  {result.score}/100
+                  {result.risk || "Not available"}
                 </strong>
-
               </div>
 
             </div>
-
           )}
 
-
           {result.required !== undefined && (
-
             <div className="recommendation">
 
               <div className="recommendation-icon">
@@ -436,26 +394,20 @@ function RelocationSimulator() {
                 </strong>
 
                 <p>
-
                   {result.type === "success"
-                    ? `Relocate ${result.required.toLocaleString()} people from ${habitation} to ${site}. The site has sufficient capacity and is approximately ${result.distance} away.`
+                    ? `Relocate ${result.required.toLocaleString()} people from ${habitation} to ${site}. The selected site has sufficient available capacity.`
                     : `Consider an alternative safe site because ${site} has only ${result.available.toLocaleString()} spaces available for ${result.required.toLocaleString()} people.`}
-
                 </p>
 
               </div>
 
             </div>
-
           )}
 
         </div>
-
       )}
 
-
       {/* SUMMARY CARDS */}
-
       <div className="simulator-summary">
 
         <div className="summary-card">
@@ -471,17 +423,16 @@ function RelocationSimulator() {
             </span>
 
             <strong>
-              3
+              {loading ? "..." : highRiskHabitations}
             </strong>
 
             <small>
-              Available for simulation
+              From backend
             </small>
 
           </div>
 
         </div>
-
 
         <div className="summary-card">
 
@@ -496,17 +447,16 @@ function RelocationSimulator() {
             </span>
 
             <strong>
-              4
+              {loading ? "..." : safeSites.length}
             </strong>
 
             <small>
-              Evacuation destinations
+              From backend
             </small>
 
           </div>
 
         </div>
-
 
         <div className="summary-card">
 
@@ -521,7 +471,9 @@ function RelocationSimulator() {
             </span>
 
             <strong>
-              3,750
+              {loading
+                ? "..."
+                : availableCapacity.toLocaleString()}
             </strong>
 
             <small>
