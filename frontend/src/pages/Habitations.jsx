@@ -1,34 +1,35 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getHabitations } from "../services/api";
 
 function Habitations() {
   const [selected, setSelected] = useState(null);
+  const [habitations, setHabitations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const habitations = [
-    {
-      id: "HAB-101",
-      name: "Hill View Colony",
-      hazard: "Landslide",
-      population: 1250,
-      riskScore: 91,
-      risk: "Critical"
-    },
-    {
-      id: "HAB-102",
-      name: "River Bank Area",
-      hazard: "Flood",
-      population: 980,
-      riskScore: 84,
-      risk: "High"
-    },
-    {
-      id: "HAB-103",
-      name: "Green Valley",
-      hazard: "Flood",
-      population: 760,
-      riskScore: 68,
-      risk: "Medium"
-    }
-  ];
+  useEffect(() => {
+    getHabitations()
+      .then((response) => {
+        console.log("Habitations API:", response.data);
+        setHabitations(response.data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Habitations API Error:", error);
+        setError("Unable to load habitation data");
+        setLoading(false);
+      });
+  }, []);
+
+  const totalHabitations = habitations.length;
+
+  const criticalRisk = habitations.filter(
+    (item) => item.risk_level === "Critical"
+  ).length;
+
+  const highRisk = habitations.filter(
+    (item) => item.risk_level === "High"
+  ).length;
 
   return (
     <div style={{ padding: "30px" }}>
@@ -39,6 +40,7 @@ function Habitations() {
         Monitor settlements and prioritize people at risk
       </p>
 
+      {/* Summary Cards */}
       <div
         style={{
           display: "flex",
@@ -50,85 +52,99 @@ function Habitations() {
 
         <div className="summary-card">
           <h3>Total Habitations</h3>
-          <h2>48</h2>
+          <h2>{loading ? "..." : totalHabitations}</h2>
         </div>
 
         <div className="summary-card">
           <h3>Critical Risk</h3>
-          <h2>12</h2>
+          <h2>{loading ? "..." : criticalRisk}</h2>
         </div>
 
         <div className="summary-card">
           <h3>High Risk</h3>
-          <h2>18</h2>
+          <h2>{loading ? "..." : highRisk}</h2>
         </div>
 
       </div>
 
+      {/* Error */}
+      {error && (
+        <p style={{ color: "red" }}>
+          {error}
+        </p>
+      )}
 
       <div className="table-card">
 
         <h2>Risk Assessment</h2>
 
-        <table>
+        {loading ? (
+          <p>Loading habitation data...</p>
+        ) : (
+          <table>
 
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Habitation</th>
-              <th>Hazard</th>
-              <th>Population</th>
-              <th>Risk Score</th>
-              <th>Risk</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-
-          <tbody>
-
-            {habitations.map((item) => (
-              <tr key={item.id}>
-
-                <td>{item.id}</td>
-
-                <td>
-                  <strong>{item.name}</strong>
-                </td>
-
-                <td>{item.hazard}</td>
-
-                <td>
-                  {item.population}
-                </td>
-
-                <td>
-                  {item.riskScore}/100
-                </td>
-
-                <td>
-                  {item.risk}
-                </td>
-
-                <td>
-
-                  <button
-                    onClick={() => setSelected(item)}
-                  >
-                    View
-                  </button>
-
-                </td>
-
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Habitation</th>
+                <th>District</th>
+                <th>Population</th>
+                <th>Risk Score</th>
+                <th>Risk</th>
+                <th>Action</th>
               </tr>
-            ))}
+            </thead>
 
-          </tbody>
+            <tbody>
 
-        </table>
+              {habitations.map((item) => (
+                <tr key={item.id}>
+
+                  <td>
+                    HAB-{item.id}
+                  </td>
+
+                  <td>
+                    <strong>{item.name}</strong>
+                  </td>
+
+                  <td>
+                    {item.district}
+                  </td>
+
+                  <td>
+                    {item.population}
+                  </td>
+
+                  <td>
+                    Not available
+                  </td>
+
+                  <td>
+                    {item.risk_level}
+                  </td>
+
+                  <td>
+
+                    <button
+                      onClick={() => setSelected(item)}
+                    >
+                      View
+                    </button>
+
+                  </td>
+
+                </tr>
+              ))}
+
+            </tbody>
+
+          </table>
+        )}
 
       </div>
 
-
+      {/* Details */}
       {selected && (
         <div
           style={{
@@ -142,7 +158,7 @@ function Habitations() {
           <h2>{selected.name}</h2>
 
           <p>
-            Hazard: {selected.hazard}
+            District: {selected.district}
           </p>
 
           <p>
@@ -150,11 +166,15 @@ function Habitations() {
           </p>
 
           <p>
-            AI Risk Score: {selected.riskScore}/100
+            Latitude: {selected.latitude}
           </p>
 
           <p>
-            Risk Level: {selected.risk}
+            Longitude: {selected.longitude}
+          </p>
+
+          <p>
+            Risk Level: {selected.risk_level}
           </p>
 
           <button onClick={() => setSelected(null)}>

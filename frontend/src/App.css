@@ -1856,3 +1856,263 @@ td small {
   background: #2563eb;
   border-radius: 10px;
 }
+/* =========================================
+   HABITATIONS & RISK - NEW PAGE
+========================================= */
+
+.habitations-page {
+  padding: 28px 32px;
+}
+
+.page-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.page-section-header h2 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.page-section-header p {
+  color: #7b8495;
+  font-size: 11px;
+  margin-top: 5px;
+}
+
+.refresh-btn {
+  border: none;
+  background: #166534;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.refresh-btn:hover {
+  background: #14532d;
+}
+
+
+/* SUMMARY CARDS */
+
+.habitation-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  margin-bottom: 22px;
+}
+
+.habitation-summary .summary-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 18px;
+  box-shadow: none;
+}
+
+.habitation-summary .summary-card span {
+  display: block;
+  color: #7b8495;
+  font-size: 10px;
+  margin-bottom: 8px;
+}
+
+.habitation-summary .summary-card strong {
+  display: block;
+  font-size: 26px;
+  color: #172033;
+}
+
+.habitation-summary .summary-card small {
+  display: block;
+  color: #9ca3af;
+  font-size: 9px;
+  margin-top: 6px;
+}
+
+
+/* TABLE CARD */
+
+.habitation-table-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.habitation-table-card .table-header {
+  display: block;
+  padding: 20px;
+  border-bottom: 1px solid #eef0f3;
+}
+
+.habitation-table-card .table-header h3 {
+  font-size: 14px;
+  margin: 0;
+}
+
+.habitation-table-card .table-header p {
+  color: #7b8495;
+  font-size: 10px;
+  margin-top: 4px;
+}
+
+
+/* HABITATION TABLE */
+
+.habitation-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 750px;
+}
+
+.habitation-table th {
+  background: #f8fafc;
+  color: #64748b;
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 9px;
+  text-transform: uppercase;
+  border-bottom: 1px solid #eef0f3;
+}
+
+.habitation-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #eef0f3;
+  font-size: 10px;
+  color: #475569;
+}
+
+.habitation-table td strong {
+  color: #172033;
+}
+
+.habitation-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+
+/* RISK BADGES */
+
+.habitation-table .risk-badge {
+  display: inline-block;
+  padding: 5px 9px;
+  border-radius: 5px;
+  font-size: 8px;
+  font-weight: bold;
+}
+
+.habitation-table .risk-badge.critical {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.habitation-table .risk-badge.high {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.habitation-table .risk-badge.medium {
+  background: #fef3c7;
+  color: #a16207;
+}
+
+.habitation-table .risk-badge.low {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+
+/* DATA MESSAGE */
+
+.data-message {
+  padding: 25px;
+  text-align: center;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.error-message {
+  color: #b91c1c;
+  background: #fef2f2;
+}
+
+
+/* WORKFLOW */
+
+.risk-information {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 22px;
+}
+
+.risk-information h3 {
+  font-size: 14px;
+  margin-bottom: 18px;
+}
+
+.workflow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.workflow-item {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 13px 16px;
+}
+
+.workflow-item strong {
+  display: block;
+  font-size: 11px;
+}
+
+.workflow-item span {
+  display: block;
+  color: #64748b;
+  font-size: 9px;
+  margin-top: 4px;
+}
+
+.workflow-arrow {
+  color: #94a3b8;
+  font-size: 18px;
+}
+
+
+/* RESPONSIVE */
+
+@media (max-width: 1000px) {
+  .habitation-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .habitations-page {
+    padding: 20px;
+  }
+
+  .page-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .habitation-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .refresh-btn {
+    width: 100%;
+  }
+}
