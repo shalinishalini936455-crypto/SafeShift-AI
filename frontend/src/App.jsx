@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { getDashboard, getHabitations } from "./services/api";
-import Sidebar from "./Components/Sidebar";
+import Sidebar from "./components/Sidebar";
 import HazardMap from "./pages/HazardMap";
 import RedZoneManagement from "./pages/RedZoneManagement";
 import ChangeDetection from "./pages/ChangeDetection";
