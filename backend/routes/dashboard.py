@@ -7,6 +7,7 @@ from models.safesite import SafeSite
 from models.relocation import RelocationPlan
 from models.notification import Notification
 
+
 router = APIRouter(
     prefix="/api/dashboard",
     tags=["Dashboard"]
@@ -21,14 +22,15 @@ def get_dashboard():
         total_habitations = db.query(Habitation).count()
 
         high_risk_habitations = db.query(Habitation).filter(
-            Habitation.risk_level == "High"
+            Habitation.risk_level.in_(["High", "Critical"])
         ).count()
 
         total_red_zones = db.query(RedZone).count()
+
         red_zones_requiring_attention = db.query(RedZone).filter(
-    RedZone.severity == "Critical"
-).count()
-        
+            RedZone.severity == "Critical"
+        ).count()
+
         total_safe_sites = db.query(SafeSite).count()
 
         safe_sites = db.query(SafeSite).all()
