@@ -1,8 +1,8 @@
-from database.database import SessionLocal
+from database.database import SessionLocal, engine, Base
 from models.habitation import Habitation
 from models.redzone import RedZone
 from models.safesite import SafeSite
-
+Base.metadata.create_all(bind=engine)
 db = SessionLocal()
 
 try:
