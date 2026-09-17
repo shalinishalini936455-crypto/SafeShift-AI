@@ -22,7 +22,7 @@ from routes.relocation_priority import router as relocation_priority_router
 from routes.notifications import router as notifications_router
 from routes.dashboard import router as dashboard_router
 from routes.reports import router as reports_router
-
+from sachet_service import fetch_sachet_alerts
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -33,7 +33,18 @@ app = FastAPI(
     description="Intelligent Disaster Risk & Relocation Decision Support System",
     version="1.0.0"
 )
-
+@app.get("/api/live-hazards")
+def live_hazards():
+    try:
+        return fetch_sachet_alerts()
+    except Exception as e:
+        return {
+            "source": "NDMA SACHET",
+            "country": "India",
+            "count": 0,
+            "alerts": [],
+            "error": str(e),
+        }
 
 # Allow React frontend to connect to FastAPI
 app.add_middleware(
