@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getDashboard, getHabitations } from "./services/api";
+import { getDashboard, getHabitations, getNotifications } from "./services/api";
 import Sidebar from "./components/Sidebar";
 import HazardMap from "./pages/HazardMap";
 import RedZoneManagement from "./pages/RedZoneManagement";
@@ -133,54 +133,153 @@ function App() {
 function Dashboard() {
 
   const [dashboardData, setDashboardData] = useState(null);
-
   const [peopleAtRisk, setPeopleAtRisk] = useState(null);
-
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [habitationsData, setHabitationsData] = useState([]);
 
   /* GET BACKEND DATA */
 
   useEffect(() => {
-
     /* Dashboard API */
-
     getDashboard()
       .then((response) => {
-
         console.log("Dashboard API:", response.data);
-
         setDashboardData(response.data);
-
       })
       .catch((error) => {
-
         console.error("Dashboard API Error:", error);
-
+      })
+      .finally(() => {
+        setLoading(false);
       });
 
-
     /* Habitations API */
-
     getHabitations()
       .then((response) => {
-
         console.log("Habitations API:", response.data);
 
-        const totalPeople = response.data.reduce(
+        const data = Array.isArray(response.data)
+          ? response.data
+          : response.data?.habitations || [];
+
+        setHabitationsData(data);
+
+        const totalPeople = data.reduce(
           (total, habitation) =>
-            total + habitation.population,
+            total + (Number(habitation.population) || 0),
           0
         );
 
         setPeopleAtRisk(totalPeople);
-
       })
       .catch((error) => {
-
         console.error("Habitations API Error:", error);
-
+        setHabitationsData([]);
+        setPeopleAtRisk(0);
       });
 
+    /* Notifications API */
+    getNotifications()
+      .then((response) => {
+        console.log("Notifications API:", response.data);
+
+        const data = Array.isArray(response.data)
+          ? response.data
+          : response.data?.notifications || [];
+
+        setNotifications(data);
+      })
+      .catch((error) => {
+        console.error("Notifications API Error:", error);
+        setNotifications([]);
+      });
   }, []);
+
+  /* LIVE RISK COUNTS */
+  const getRiskCount = (level) => {
+    return habitationsData.filter((habitation) => {
+      const risk = String(
+        habitation.risk_level ??
+          habitation.risk ??
+          habitation.riskLevel ??
+          ""
+      ).toLowerCase();
+
+      return risk === level.toLowerCase();
+    }).length;
+  };
+
+  const criticalCount = getRiskCount("Critical");
+  const highCount = getRiskCount("High");
+  const mediumCount = getRiskCount("Medium");
+  const lowCount = getRiskCount("Low");
+
+  const totalHabitations = habitationsData.length;
+
+  const getPercentage = (count) => {
+    if (totalHabitations === 0) return 0;
+    return Math.round((count / totalHabitations) * 100);
+  };
+
+  /* NOTIFICATION HELPERS */
+  const getNotificationTitle = (notification) =>
+    notification.title ||
+    notification.notification_title ||
+    notification.type ||
+    "System Notification";
+
+  const getNotificationMessage = (notification) =>
+    notification.message ||
+    notification.description ||
+    notification.details ||
+    "SafeShift AI system notification";
+
+  const getNotificationTime = (notification) => {
+    const value =
+      notification.created_at ||
+      notification.timestamp ||
+      notification.time ||
+      notification.date;
+
+    if (!value) return "Recently";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return String(value);
+    }
+
+    const seconds = Math.max(
+      0,
+      Math.floor((Date.now() - date.getTime()) / 1000)
+    );
+
+    if (seconds < 60) return "Just now";
+
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} min ago`;
+
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hr ago`;
+
+    const days = Math.floor(hours / 24);
+    return `${days} day${days === 1 ? "" : "s"} ago`;
+  };
+
+  const getNotificationClass = (notification) => {
+    const value = String(
+      notification.severity ||
+        notification.priority ||
+        notification.type ||
+        ""
+    ).toLowerCase();
+
+    if (value.includes("critical")) return "critical";
+    if (value.includes("high") || value.includes("warning")) return "warning";
+
+    return "info";
+  };
 
 
   return (
@@ -193,21 +292,16 @@ function Dashboard() {
       ===================================================== */}
 
       <div className="demo-banner">
+  <span>🟢</span>
 
-        <span>⚠️</span>
+  <div>
+    <strong>Live Monitoring Mode</strong>
 
-        <div>
-
-          <strong>Prototype Monitoring Mode</strong>
-
-          <p>
-            Dashboard currently displays demo/simulated data.
-            Connect the backend to display live system data.
-          </p>
-
-        </div>
-
-      </div>
+    <p>
+      Dashboard data is connected to the SafeShift AI backend.
+    </p>
+  </div>
+</div>
 
 
       {/* =====================================================
@@ -269,8 +363,13 @@ function Dashboard() {
           </h2>
 
           <p>
-            <strong>7</strong> marked for relocation
-          </p>
+  <strong>
+    {dashboardData
+      ? dashboardData.total_relocation_plans
+      : "..."}
+  </strong>{" "}
+  relocation plans
+</p>
 
         </div>
 
@@ -377,8 +476,8 @@ function Dashboard() {
           </div>
 
           <div className="big-number">
-            7
-          </div>
+  {loading ? "..." : criticalCount}
+</div>
 
           <p>
             Habitations requiring immediate assessment
@@ -388,15 +487,15 @@ function Dashboard() {
 
             <div
               style={{
-                width: "72%"
+                width: `${getPercentage(criticalCount)}%`
               }}
             ></div>
 
           </div>
 
           <small>
-            72% priority score
-          </small>
+  {getPercentage(criticalCount)}% of monitored habitations
+</small>
 
         </div>
 
@@ -417,9 +516,9 @@ function Dashboard() {
 
           </div>
 
-          <div className="big-number">
-            11
-          </div>
+         <div className="big-number">
+  {loading ? "..." : highCount}
+</div>
 
           <p>
             Habitations requiring action planning
@@ -429,15 +528,15 @@ function Dashboard() {
 
             <div
               style={{
-                width: "54%"
+               width: `${getPercentage(highCount)}%`
               }}
             ></div>
 
           </div>
 
-          <small>
-            54% priority score
-          </small>
+         <small>
+  {getPercentage(highCount)}% of monitored habitations
+</small>
 
         </div>
 
@@ -459,7 +558,9 @@ function Dashboard() {
           </div>
 
           <div className="big-number">
-            6
+            {loading
+              ? "..."
+              : dashboardData?.ai_detections_pending ?? 0}
           </div>
 
           <p>
@@ -470,15 +571,15 @@ function Dashboard() {
 
             <div
               style={{
-                width: "38%"
+                width: "0%"
               }}
             ></div>
 
           </div>
 
-          <small>
-            Field verification required
-          </small>
+         <small>
+  No pending AI detections
+</small>
 
         </div>
 
@@ -517,79 +618,47 @@ function Dashboard() {
           </div>
 
 
-          <div className="alert-row">
+          {notifications.length === 0 ? (
+            <div className="alert-row">
+              <div className="alert-icon info">i</div>
 
-            <div className="alert-icon critical">
-              !
+              <div>
+                <strong>No recent notifications</strong>
+                <p>No system notifications are currently available.</p>
+              </div>
+
+              <span>Now</span>
             </div>
+          ) : (
+            notifications.slice(0, 3).map((notification, index) => {
+              const iconClass = getNotificationClass(notification);
 
-            <div>
+              return (
+                <div
+                  className="alert-row"
+                  key={notification.id || index}
+                >
+                  <div className={`alert-icon ${iconClass}`}>
+                    {iconClass === "info" ? "i" : "!"}
+                  </div>
 
-              <strong>
-                New structure detected
-              </strong>
+                  <div>
+                    <strong>
+                      {getNotificationTitle(notification)}
+                    </strong>
 
-              <p>
-                Red Zone RZ-024 · AI confidence 94%
-              </p>
+                    <p>
+                      {getNotificationMessage(notification)}
+                    </p>
+                  </div>
 
-            </div>
-
-            <span>
-              5 min ago
-            </span>
-
-          </div>
-
-
-          <div className="alert-row">
-
-            <div className="alert-icon warning">
-              !
-            </div>
-
-            <div>
-
-              <strong>
-                High habitation risk
-              </strong>
-
-              <p>
-                Village A · Risk score 91/100
-              </p>
-
-            </div>
-
-            <span>
-              18 min ago
-            </span>
-
-          </div>
-
-
-          <div className="alert-row">
-
-            <div className="alert-icon info">
-              i
-            </div>
-
-            <div>
-
-              <strong>
-                Field verification pending
-              </strong>
-
-              <p>
-                3 detections awaiting review
-              </p>
-
-            </div>
-
-            <span>
-              32 min ago
-            </span>
-
-          </div>
+                  <span>
+                    {getNotificationTime(notification)}
+                  </span>
+                </div>
+              );
+            })
+          )}
 
         </div>
 
@@ -622,14 +691,14 @@ function Dashboard() {
             </span>
 
             <strong>
-              7
-            </strong>
+  {criticalCount}
+</strong>
 
             <div className="risk-bar">
 
               <div
                 style={{
-                  width: "25%"
+                 width: `${getPercentage(criticalCount)}%`
                 }}
               ></div>
 
@@ -645,14 +714,14 @@ function Dashboard() {
             </span>
 
             <strong>
-              11
-            </strong>
+  {highCount}
+</strong>
 
             <div className="risk-bar">
 
               <div
                 style={{
-                  width: "45%"
+               width: `${getPercentage(highCount)}%`
                 }}
               ></div>
 
@@ -667,15 +736,14 @@ function Dashboard() {
               Medium
             </span>
 
-            <strong>
-              18
-            </strong>
-
+           <strong>
+  {mediumCount}
+</strong>
             <div className="risk-bar">
 
               <div
                 style={{
-                  width: "65%"
+                 width: `${getPercentage(mediumCount)}%`
                 }}
               ></div>
 
@@ -690,15 +758,14 @@ function Dashboard() {
               Low
             </span>
 
-            <strong>
-              26
-            </strong>
-
+           <strong>
+  {lowCount}
+</strong>
             <div className="risk-bar">
 
               <div
                 style={{
-                  width: "85%"
+                 width: `${getPercentage(lowCount)}%`
                 }}
               ></div>
 

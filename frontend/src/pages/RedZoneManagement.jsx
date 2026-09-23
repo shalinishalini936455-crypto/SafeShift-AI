@@ -1,19 +1,24 @@
-import { useEffect, useState } from "react";
-import { getRedZones } from "../services/api";
+import { useEffect, useState, useCallback } from "react";
+import { getRedZones, refreshRedZones } from "../services/api";
+
+// How often the page auto-polls for updated AI-detected zones.
+const AUTO_REFRESH_MS = 60000; // 1 minute
 
 function RedZoneManagement() {
   const [showForm, setShowForm] = useState(false);
   const [zones, setZones] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [detecting, setDetecting] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [lastSync, setLastSync] = useState(null);
 
-  useEffect(() => {
-    getRedZones()
+  const loadZones = useCallback(() => {
+    return getRedZones()
       .then((response) => {
-        console.log("Red Zones API:", response.data);
         setZones(response.data);
         setLoading(false);
+        setError("");
       })
       .catch((error) => {
         console.error("Red Zones API Error:", error);
@@ -21,6 +26,41 @@ function RedZoneManagement() {
         setLoading(false);
       });
   }, []);
+
+  // Initial load
+  useEffect(() => {
+    loadZones();
+  }, [loadZones]);
+
+  // Auto-poll in the background so newly AI-detected/escalated
+  // zones show up without the user doing anything.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadZones();
+    }, AUTO_REFRESH_MS);
+    return () => clearInterval(interval);
+  }, [loadZones]);
+
+  // Manually trigger the AI detection pass right now (compares
+  // current live hazard data against known zones, escalates
+  // recurring ones, creates new ones).
+  const handleRunDetection = () => {
+    setDetecting(true);
+    setError("");
+
+    refreshRedZones()
+      .then((response) => {
+        setLastSync(response.data);
+        return loadZones();
+      })
+      .catch((error) => {
+        console.error("Red Zone refresh error:", error);
+        setError("AI detection run failed - showing last known data");
+      })
+      .finally(() => {
+        setDetecting(false);
+      });
+  };
 
   const totalZones = zones.length;
 
@@ -32,11 +72,22 @@ function RedZoneManagement() {
     (zone) => zone.severity === "High"
   ).length;
 
-  const filteredZones = zones.filter((zone) =>
-    `${zone.zone_name} ${zone.district} ${zone.hazard_type}`
-      .toLowerCase()
-      .includes(search.toLowerCase())
-  );
+  const permanentZones = zones.filter(
+    (zone) => zone.is_permanent_zone
+  ).length;
+
+  const aiDetectedZones = zones.filter(
+    (zone) => zone.source === "SACHET"
+  ).length;
+
+  const filteredZones = zones
+    .filter((zone) =>
+      `${zone.zone_name} ${zone.district} ${zone.hazard_type}`
+        .toLowerCase()
+        .includes(search.toLowerCase())
+    )
+    // Highest risk / most recurring hazards first
+    .sort((a, b) => (b.risk_score || 0) - (a.risk_score || 0));
 
   return (
     <div className="redzone-page">
@@ -45,17 +96,34 @@ function RedZoneManagement() {
         <div>
           <h2>Red Zone Management</h2>
           <p>
-            Manage and monitor officially declared high-risk zones
+            AI-detected high-risk zones, updated from live hazard data
           </p>
         </div>
 
-        <button
-          className="primary-btn"
-          onClick={() => setShowForm(!showForm)}
-        >
-          + Declare Red Zone
-        </button>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button
+            className="primary-btn"
+            onClick={handleRunDetection}
+            disabled={detecting}
+          >
+            {detecting ? "Running AI Detection..." : "Run AI Detection"}
+          </button>
+
+          <button
+            className="primary-btn"
+            onClick={() => setShowForm(!showForm)}
+          >
+            + Declare Red Zone
+          </button>
+        </div>
       </div>
+
+      {lastSync && (
+        <p style={{ fontSize: "0.85rem", opacity: 0.8 }}>
+          Last AI run: {lastSync.created} new zone(s) detected,{" "}
+          {lastSync.escalated} zone(s) escalated from recurring hazards.
+        </p>
+      )}
 
       {/* FORM */}
 
@@ -163,11 +231,16 @@ function RedZoneManagement() {
         </div>
 
         <div>
-          <span>Other</span>
+          <span>Permanent (Chronic)</span>
           <strong>
-            {loading
-              ? "..."
-              : totalZones - criticalZones - highZones}
+            {loading ? "..." : permanentZones}
+          </strong>
+        </div>
+
+        <div>
+          <span>AI-Detected</span>
+          <strong>
+            {loading ? "..." : aiDetectedZones}
           </strong>
         </div>
 
@@ -189,7 +262,7 @@ function RedZoneManagement() {
 
           <div>
             <h3>Declared Red Zones</h3>
-            <p>Current monitored zones</p>
+            <p>Sorted by AI risk score, highest first</p>
           </div>
 
           <input
@@ -215,8 +288,10 @@ function RedZoneManagement() {
                   <th>District</th>
                   <th>Hazard</th>
                   <th>Severity</th>
-                  <th>Latitude</th>
-                  <th>Longitude</th>
+                  <th>Risk Score</th>
+                  <th>Occurrences</th>
+                  <th>Status</th>
+                  <th>Source</th>
                 </tr>
               </thead>
 
@@ -251,11 +326,29 @@ function RedZoneManagement() {
                     </td>
 
                     <td>
-                      {zone.latitude}
+                      {zone.risk_score != null
+                        ? Math.round(zone.risk_score)
+                        : "-"}
                     </td>
 
                     <td>
-                      {zone.longitude}
+                      {zone.occurrence_count ?? 1}
+                    </td>
+
+                    <td>
+                      {zone.is_permanent_zone ? (
+                        <span className="severity critical">
+                          Permanent
+                        </span>
+                      ) : (
+                        <span className="severity medium">
+                          Active
+                        </span>
+                      )}
+                    </td>
+
+                    <td>
+                      {zone.source === "SACHET" ? "AI (Live)" : "Manual"}
                     </td>
 
                   </tr>
