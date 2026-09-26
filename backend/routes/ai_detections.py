@@ -115,3 +115,21 @@ def verify_detection(detection_id: int):
         return {"message": "Detection marked as verified", "id": detection_id}
     finally:
         db.close()
+@router.delete("/detections/{detection_id}")
+def delete_detection(detection_id: int):
+    """Remove a detection marked as a false positive by a human reviewer."""
+    db = SessionLocal()
+    try:
+        detection = db.query(AIDetection).filter(
+            AIDetection.id == detection_id
+        ).first()
+
+        if not detection:
+            return {"error": "Detection not found"}
+
+        db.delete(detection)
+        db.commit()
+
+        return {"message": "Detection removed as false positive", "id": detection_id}
+    finally:
+        db.close()

@@ -1,50 +1,119 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+
+// The Flask wrapper around sachet_service.py (see api_server.py).
+// Change this if you run the API server on a different host/port.
+const ALERTS_API_URL = "http://localhost:8010/api/alerts";
+
+// Poll for new alerts every 2 minutes (the API itself caches
+// upstream SACHET fetches for 2 minutes, so this stays in sync
+// without hammering either server).
+const POLL_INTERVAL_MS = 120000;
+
+// CAP severity (Extreme/Severe/Moderate/Minor/Unknown) mapped
+// to the badge levels this UI already knows how to color.
+function mapCapSeverity(capSeverity) {
+  switch ((capSeverity || "").toLowerCase()) {
+    case "extreme":
+      return "Critical";
+    case "severe":
+      return "High";
+    case "moderate":
+      return "Moderate";
+    case "minor":
+      return "Low";
+    default:
+      return "Unknown";
+  }
+}
+
+function formatAlertDate(isoString) {
+  if (!isoString) return "Time not published";
+
+  try {
+    return new Date(isoString).toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return isoString;
+  }
+}
+
+// Convert one SACHET alert object (as returned by
+// fetch_sachet_alerts() in sachet_service.py) into the shape
+// this component's cards and modal already render.
+function mapAlertToReport(alert, index) {
+  const districts =
+    alert.affected_districts && alert.affected_districts.length
+      ? alert.affected_districts
+          .map((d) => d.replace(/\b\w/g, (c) => c.toUpperCase()))
+          .join(", ")
+      : "District not specified in alert";
+
+  return {
+    id: alert.identifier || `SACHET-${index}`,
+    habitation: districts,
+    hazard: alert.hazard_type || "Other",
+    severity: mapCapSeverity(alert.severity),
+    population: "Not published in alert",
+    verification: alert.status === "Actual" ? "Completed" : "Pending",
+    condition:
+      alert.headline || alert.description || alert.event || "No description published.",
+    recommendation:
+      alert.instruction ||
+      "No specific instruction published with this alert; monitor official SACHET updates.",
+    officer: alert.sender_name || alert.sender || "NDMA SACHET",
+    date: formatAlertDate(alert.sent),
+  };
+}
 
 function FieldReports() {
-  const [reports, setReports] = useState([
-    {
-      id: "FR-001",
-      habitation: "Village A, Salem",
-      hazard: "Flood",
-      severity: "Critical",
-      population: 1240,
-      verification: "Completed",
-      condition:
-        "Flood risk confirmed near the habitation. Immediate assessment required.",
-      recommendation:
-        "Move vulnerable population to a suitable medium-term relocation site.",
-      officer: "Field Officer - Salem",
-      date: "11 Sep 2026",
-    },
-    {
-      id: "FR-002",
-      habitation: "Village B, Salem",
-      hazard: "Landslide",
-      severity: "High",
-      population: 850,
-      verification: "Pending",
-      condition:
-        "Ground verification is pending for the identified landslide risk.",
-      recommendation:
-        "Conduct field inspection before finalizing relocation priority.",
-      officer: "Field Officer - Salem",
-      date: "11 Sep 2026",
-    },
-    {
-      id: "FR-003",
-      habitation: "Village C, Erode",
-      hazard: "Flood",
-      severity: "High",
-      population: 620,
-      verification: "Completed",
-      condition:
-        "Flood-prone condition verified around the habitation.",
-      recommendation:
-        "Include habitation in relocation planning and identify a medium-term site.",
-      officer: "Field Officer - Erode",
-      date: "11 Sep 2026",
-    },
-  ]);
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [lastFetched, setLastFetched] = useState(null);
+
+  const loadAlerts = useCallback(async () => {
+    try {
+      const response = await fetch(ALERTS_API_URL);
+
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Respect the service's own rule: if SACHET has no active
+      // alert, this is an empty list — never a fake one.
+      const mapped = (data.alerts || []).map(mapAlertToReport);
+
+      setReports(mapped);
+      setLastFetched(new Date());
+      setError(null);
+    } catch (err) {
+      setError(
+        err.message ||
+          "Could not reach the SACHET alert service. Is api_server.py running on port 8000?"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadAlerts();
+
+    const interval = setInterval(loadAlerts, POLL_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [loadAlerts]);
 
   const [selectedReport, setSelectedReport] = useState(null);
 
@@ -60,15 +129,13 @@ function FieldReports() {
     (report) => report.severity === "Critical"
   ).length;
 
-  const verifyReport = (id) => {
+  const acknowledgeAlert = (id) => {
     setReports((currentReports) =>
       currentReports.map((report) =>
         report.id === id
           ? {
               ...report,
               verification: "Completed",
-              condition:
-                "Ground verification completed. Risk condition confirmed.",
             }
           : report
       )
@@ -81,23 +148,29 @@ function FieldReports() {
       {/* HEADER */}
       <div style={styles.header}>
         <div>
-          <p style={styles.label}>DISASTER MONITORING</p>
+          
 
-          <h1 style={styles.title}>Field Reports</h1>
+          <h1 style={styles.title}>Field Data Collection</h1>
 
           <p style={styles.subtitle}>
-            Ground verification reports submitted by field officers.
+            Live pan-India hazard alerts pulled from the NDMA SACHET feed.
           </p>
         </div>
 
         <div style={styles.live}>
-          <span>●</span> FIELD MONITORING
+          <span>●</span> LIVE SACHET FEED
         </div>
       </div>
 
-      {/* DEMO DATA */}
+      {/* DATA SOURCE NOTE */}
       <div style={styles.demo}>
-        DEMO DATA
+        {loading
+          ? "LOADING LIVE ALERTS FROM SACHET…"
+          : error
+          ? `COULD NOT LOAD LIVE DATA — ${error}`
+          : `LIVE DATA — NDMA SACHET (PAN-INDIA)${
+              lastFetched ? ` · UPDATED ${lastFetched.toLocaleTimeString("en-IN")}` : ""
+            }`}
       </div>
 
       {/* SUMMARY CARDS */}
@@ -116,26 +189,26 @@ function FieldReports() {
         </div>
 
         <div style={styles.card}>
-          <p style={styles.cardLabel}>Verified Reports</p>
+          <p style={styles.cardLabel}>Acknowledged Alerts</p>
 
           <h2 style={styles.cardNumber}>
             {verifiedReports}
           </h2>
 
           <p style={styles.cardText}>
-            Ground condition verified
+            Reviewed by an officer
           </p>
         </div>
 
         <div style={styles.card}>
-          <p style={styles.cardLabel}>Pending Verification</p>
+          <p style={styles.cardLabel}>Awaiting Acknowledgement</p>
 
           <h2 style={styles.cardNumber}>
             {pendingReports}
           </h2>
 
           <p style={styles.cardText}>
-            Awaiting field inspection
+            Not yet reviewed
           </p>
         </div>
 
@@ -159,11 +232,11 @@ function FieldReports() {
         <div style={styles.sectionHeader}>
           <div>
             <h2 style={styles.sectionTitle}>
-              Ground Verification Reports
+              Live SACHET Alerts
             </h2>
 
             <p style={styles.sectionSubtitle}>
-              Field observations used to validate disaster risk before relocation decisions.
+              Active hazard alerts pulled directly from the NDMA SACHET CAP feed.
             </p>
           </div>
 
@@ -171,6 +244,13 @@ function FieldReports() {
             {reports.length} Reports
           </div>
         </div>
+
+        {!loading && !error && reports.length === 0 && (
+          <p style={styles.sectionSubtitle}>
+            SACHET currently reports no active alerts. Nothing is shown here
+            because this dashboard never fabricates hazards.
+          </p>
+        )}
 
         {/* REPORTS */}
         {reports.map((report) => (
@@ -196,12 +276,20 @@ function FieldReports() {
                     ...styles.severity,
                     background:
                       report.severity === "Critical"
-                        ? "#fee2e2"
-                        : "#ffedd5",
+                        ? "rgba(239, 68, 68, 0.22)"
+                        : report.severity === "High"
+                        ? "rgba(245, 158, 11, 0.22)"
+                        : report.severity === "Moderate"
+                        ? "rgba(59, 130, 246, 0.22)"
+                        : "rgba(148, 163, 184, 0.22)",
                     color:
                       report.severity === "Critical"
-                        ? "#b91c1c"
-                        : "#c2410c",
+                        ? "#ff9c9c"
+                        : report.severity === "High"
+                        ? "#ffcf9e"
+                        : report.severity === "Moderate"
+                        ? "#93c5fd"
+                        : "#cbd5e1",
                   }}
                 >
                   {report.severity}
@@ -211,11 +299,13 @@ function FieldReports() {
 
               <p style={styles.details}>
                 {report.hazard} •{" "}
-                {report.population.toLocaleString()} people
+                {typeof report.population === "number"
+                  ? `${report.population.toLocaleString()} people`
+                  : report.population}
               </p>
 
               <p style={styles.condition}>
-                <strong>Field observation:</strong>{" "}
+                <strong>Alert:</strong>{" "}
                 {report.condition}
               </p>
 
@@ -241,8 +331,8 @@ function FieldReports() {
                 ...styles.status,
                 color:
                   report.verification === "Completed"
-                    ? "#15803d"
-                    : "#b45309",
+                    ? "#a8f0c6"
+                    : "#ffd699",
               }}
             >
               <span>
@@ -351,7 +441,7 @@ function FieldReports() {
 
               <div>
                 <p style={styles.modalLabel}>
-                  FIELD VERIFICATION REPORT
+                  SACHET HAZARD ALERT
                 </p>
 
                 <h2 style={styles.modalTitle}>
@@ -383,7 +473,9 @@ function FieldReports() {
               <div style={styles.detailBox}>
                 <span>Population</span>
                 <strong>
-                  {selectedReport.population.toLocaleString()}
+                  {typeof selectedReport.population === "number"
+                    ? selectedReport.population.toLocaleString()
+                    : selectedReport.population}
                 </strong>
               </div>
 
@@ -396,9 +488,9 @@ function FieldReports() {
 
             <div style={styles.modalSection}>
 
-              <h3>Ground Observation</h3>
+              <h3 style={styles.modalSectionHeading}>Alert Details</h3>
 
-              <p>
+              <p style={styles.modalSectionText}>
                 {selectedReport.condition}
               </p>
 
@@ -406,9 +498,9 @@ function FieldReports() {
 
             <div style={styles.modalSection}>
 
-              <h3>Officer Recommendation</h3>
+              <h3 style={styles.modalSectionHeading}>Official Instruction</h3>
 
-              <p>
+              <p style={styles.modalSectionText}>
                 {selectedReport.recommendation}
               </p>
 
@@ -416,9 +508,9 @@ function FieldReports() {
 
             <div style={styles.modalSection}>
 
-              <h3>Verification Status</h3>
+              <h3 style={styles.modalSectionHeading}>Acknowledgement Status</h3>
 
-              <p>
+              <p style={styles.modalSectionText}>
                 {selectedReport.verification}
               </p>
 
@@ -429,16 +521,14 @@ function FieldReports() {
               <button
                 style={styles.verifyButton}
                 onClick={() => {
-                  verifyReport(selectedReport.id);
+                  acknowledgeAlert(selectedReport.id);
                   setSelectedReport({
                     ...selectedReport,
                     verification: "Completed",
-                    condition:
-                      "Ground verification completed. Risk condition confirmed.",
                   });
                 }}
               >
-                Mark as Verified
+                Acknowledge Alert
               </button>
 
             )}
@@ -453,26 +543,47 @@ function FieldReports() {
   );
 }
 
+/* =========================
+   STYLES — glassmorphism, matches
+   RelocationPriority / RedZone / Habitations / ActionPlans
+========================= */
+
+const glassCard = {
+  background: "rgba(255, 255, 255, 0.12)",
+  border: "1px solid rgba(255, 255, 255, 0.3)",
+  borderRadius: "14px",
+  backdropFilter: "blur(24px) saturate(150%)",
+  WebkitBackdropFilter: "blur(24px) saturate(150%)",
+  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
+};
+
 const styles = {
 
   page: {
     padding: "30px",
-    color: "#172033",
-    background: "#f8fafc",
-    minHeight: "100vh",
+    color: "#ffffff",
+    minHeight: "calc(100vh - 82px)",
+    fontFamily: "Inter, Arial, Helvetica, sans-serif",
   },
 
   header: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "18px",
+    padding: "5.5px 20px 32px",
+    marginBottom: "22px",
+    gap: "20px",
+    flexWrap: "wrap",
+    background: "rgba(255, 255, 255, 0.28)",
+    width: "900px",
+    height: "80px",
+    borderRadius: "8px",
   },
 
   label: {
     fontSize: "12px",
     fontWeight: "700",
-    color: "#64748b",
+    color: "#a8b3c4",
     letterSpacing: "1px",
     margin: 0,
   },
@@ -481,10 +592,11 @@ const styles = {
     fontSize: "32px",
     margin: "6px 0",
     fontWeight: "700",
+    color: "#ffffff",
   },
 
   subtitle: {
-    color: "#64748b",
+    color: "#d7dee6",
     margin: 0,
     fontSize: "14px",
   },
@@ -492,17 +604,20 @@ const styles = {
   live: {
     padding: "10px 16px",
     borderRadius: "20px",
-    background: "#eff6ff",
-    color: "#1d4ed8",
+    background: "rgba(59, 130, 246, 0.18)",
+    border: "1px solid rgba(96, 165, 250, 0.35)",
+    color: "#93c5fd",
     fontWeight: "700",
     fontSize: "13px",
+    whiteSpace: "nowrap",
   },
 
   demo: {
     display: "inline-block",
     padding: "6px 10px",
-    background: "#fff7ed",
-    color: "#c2410c",
+    background: "rgba(255, 176, 64, 0.18)",
+    color: "#ffd699",
+    border: "1px solid rgba(255, 176, 64, 0.35)",
     borderRadius: "6px",
     fontSize: "11px",
     fontWeight: "700",
@@ -517,15 +632,12 @@ const styles = {
   },
 
   card: {
-    background: "#ffffff",
-    border: "1px solid #e5e7eb",
-    borderRadius: "14px",
+    ...glassCard,
     padding: "20px",
-    boxShadow: "0 3px 10px rgba(0,0,0,0.04)",
   },
 
   cardLabel: {
-    color: "#64748b",
+    color: "#b9c2cf",
     fontSize: "13px",
     fontWeight: "600",
     margin: 0,
@@ -534,19 +646,20 @@ const styles = {
   cardNumber: {
     fontSize: "30px",
     margin: "12px 0 4px",
+    color: "#ffffff",
+    fontWeight: "800",
   },
 
   cardText: {
-    color: "#94a3b8",
+    color: "#a8b3c4",
     fontSize: "12px",
     margin: 0,
   },
 
   section: {
-    background: "#ffffff",
-    border: "1px solid #e5e7eb",
-    borderRadius: "14px",
+    ...glassCard,
     padding: "25px",
+    marginBottom: "25px",
   },
 
   sectionHeader: {
@@ -554,27 +667,32 @@ const styles = {
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: "18px",
+    gap: "15px",
+    flexWrap: "wrap",
   },
 
   sectionTitle: {
     margin: 0,
     fontSize: "20px",
     fontWeight: "700",
+    color: "#ffffff",
   },
 
   sectionSubtitle: {
-    color: "#64748b",
+    color: "#b9c2cf",
     margin: "6px 0 0",
     fontSize: "13px",
   },
 
   reportCount: {
-    background: "#eff6ff",
-    color: "#1d4ed8",
+    background: "rgba(59, 130, 246, 0.18)",
+    color: "#93c5fd",
+    border: "1px solid rgba(96, 165, 250, 0.35)",
     padding: "7px 12px",
     borderRadius: "20px",
     fontSize: "12px",
     fontWeight: "700",
+    whiteSpace: "nowrap",
   },
 
   report: {
@@ -582,14 +700,14 @@ const styles = {
     alignItems: "center",
     gap: "18px",
     padding: "20px 0",
-    borderTop: "1px solid #e5e7eb",
+    borderTop: "1px solid rgba(255, 255, 255, 0.12)",
   },
 
   reportIcon: {
     width: "45px",
     height: "45px",
     borderRadius: "10px",
-    background: "#eff6ff",
+    background: "rgba(255, 255, 255, 0.1)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -605,11 +723,13 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "10px",
+    flexWrap: "wrap",
   },
 
   habitation: {
     margin: 0,
     fontSize: "16px",
+    color: "#ffffff",
   },
 
   severity: {
@@ -620,13 +740,13 @@ const styles = {
   },
 
   details: {
-    color: "#475569",
+    color: "#d7dee6",
     fontSize: "13px",
     margin: "6px 0",
   },
 
   condition: {
-    color: "#64748b",
+    color: "#b9c2cf",
     fontSize: "12px",
     margin: "7px 0",
     lineHeight: "1.5",
@@ -635,9 +755,10 @@ const styles = {
   meta: {
     display: "flex",
     gap: "18px",
-    color: "#94a3b8",
+    color: "#a8b3c4",
     fontSize: "11px",
     marginTop: "8px",
+    flexWrap: "wrap",
   },
 
   status: {
@@ -647,20 +768,18 @@ const styles = {
   },
 
   viewButton: {
-    border: "1px solid #cbd5e1",
+    border: "1px solid rgba(147, 197, 253, 0.5)",
     padding: "9px 14px",
     borderRadius: "7px",
-    background: "#ffffff",
-    color: "#172033",
+    background: "rgba(59, 130, 246, 0.15)",
+    color: "#bcdcff",
     cursor: "pointer",
     fontWeight: "600",
+    whiteSpace: "nowrap",
   },
 
   workflow: {
-    marginTop: "25px",
-    background: "#ffffff",
-    border: "1px solid #e5e7eb",
-    borderRadius: "14px",
+    ...glassCard,
     padding: "25px",
   },
 
@@ -675,32 +794,34 @@ const styles = {
     display: "flex",
     gap: "12px",
     padding: "15px",
-    border: "1px solid #e5e7eb",
+    border: "1px solid rgba(255, 255, 255, 0.15)",
     borderRadius: "10px",
-    background: "#f8fafc",
+    background: "rgba(255, 255, 255, 0.06)",
   },
 
   stepNumber: {
     width: "35px",
     height: "35px",
     borderRadius: "8px",
-    background: "#e2e8f0",
+    background: "rgba(255, 255, 255, 0.1)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     fontSize: "11px",
     fontWeight: "800",
+    color: "#93c5fd",
     flexShrink: 0,
   },
 
   stepTitle: {
     margin: "2px 0 5px",
     fontSize: "13px",
+    color: "#ffffff",
   },
 
   stepText: {
     margin: 0,
-    color: "#64748b",
+    color: "#b9c2cf",
     fontSize: "11px",
     lineHeight: "1.5",
   },
@@ -711,7 +832,9 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    background: "rgba(15,23,42,0.45)",
+    background: "rgba(5, 10, 20, 0.6)",
+    backdropFilter: "blur(4px)",
+    WebkitBackdropFilter: "blur(4px)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -720,25 +843,27 @@ const styles = {
   },
 
   modal: {
+    ...glassCard,
     width: "700px",
     maxWidth: "100%",
-    background: "#ffffff",
-    borderRadius: "16px",
+    background: "rgba(20, 28, 45, 0.9)",
     padding: "25px",
-    boxShadow: "0 20px 50px rgba(0,0,0,0.2)",
+    color: "#ffffff",
+    maxHeight: "90vh",
+    overflowY: "auto",
   },
 
   modalHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    borderBottom: "1px solid #e5e7eb",
+    borderBottom: "1px solid rgba(255, 255, 255, 0.15)",
     paddingBottom: "18px",
   },
 
   modalLabel: {
     fontSize: "11px",
-    color: "#64748b",
+    color: "#a8b3c4",
     fontWeight: "700",
     letterSpacing: "1px",
     margin: 0,
@@ -747,16 +872,18 @@ const styles = {
   modalTitle: {
     margin: "5px 0 0",
     fontSize: "24px",
+    color: "#ffffff",
   },
 
   closeButton: {
-    border: "none",
-    background: "#f1f5f9",
+    border: "1px solid rgba(255, 255, 255, 0.3)",
+    background: "rgba(255, 255, 255, 0.1)",
     width: "32px",
     height: "32px",
     borderRadius: "8px",
     fontSize: "22px",
     cursor: "pointer",
+    color: "#ffffff",
   },
 
   modalGrid: {
@@ -767,22 +894,40 @@ const styles = {
   },
 
   detailBox: {
-    background: "#f8fafc",
+    background: "rgba(255, 255, 255, 0.08)",
+    border: "1px solid rgba(255, 255, 255, 0.15)",
     padding: "14px",
     borderRadius: "9px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "5px",
+    color: "#e8ecf1",
   },
 
   modalSection: {
     marginTop: "20px",
   },
 
+  modalSectionHeading: {
+    margin: "0 0 6px",
+    fontSize: "14px",
+    color: "#ffffff",
+  },
+
+  modalSectionText: {
+    margin: 0,
+    color: "#d7dee6",
+    fontSize: "13px",
+    lineHeight: "1.6",
+  },
+
   verifyButton: {
     marginTop: "20px",
-    border: "none",
+    border: "1px solid rgba(34, 197, 94, 0.4)",
     padding: "11px 18px",
     borderRadius: "8px",
-    background: "#172033",
-    color: "#ffffff",
+    background: "rgba(34, 197, 94, 0.25)",
+    color: "#a8f0c6",
     cursor: "pointer",
     fontWeight: "600",
   },

@@ -22,6 +22,9 @@ for current numbers, these can change):
 
 import os
 import requests
+from dotenv import load_dotenv
+
+load_dotenv()  # loads CDSE_CLIENT_ID / CDSE_CLIENT_SECRET from backend/.env
 
 TOKEN_URL = "https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token"
 PROCESS_URL = "https://sh.dataspace.copernicus.eu/api/v1/process"

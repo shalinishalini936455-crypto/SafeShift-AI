@@ -151,9 +151,7 @@ function RelocationPriority() {
       {/* HEADER */}
       <div className="priority-header">
         <div>
-          <span>
-            RELOCATION DECISION SUPPORT
-          </span>
+          
 
           <h1>Relocation Priority</h1>
 
@@ -213,7 +211,7 @@ function RelocationPriority() {
           </div>
         </div>
 
-        <div className="priority-summary-card risk-card">
+       <div className="priority-summary-card priority-risk-card">
           <div className="summary-icon">⚠</div>
 
           <div>

@@ -1,4 +1,6 @@
 import requests
+from auth_store import router as auth_router
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -23,7 +25,7 @@ from routes.dashboard import router as dashboard_router
 from routes.reports import router as reports_router
 from sachet_service import fetch_sachet_alerts
 from routes.change_detection_auto import router as change_detection_auto_router
-
+from routes.assistant import router as assistant_router
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
@@ -94,7 +96,7 @@ def get_weather():
     response = requests.get(url, params=params, timeout=10)
 
     return response.json()
-
+app.include_router(auth_router)
 app.include_router(habitation_router)
 app.include_router(redzone_router)
 app.include_router(safesite_router)
@@ -109,3 +111,4 @@ app.include_router(notifications_router)
 app.include_router(dashboard_router)
 app.include_router(reports_router)
 app.include_router(change_detection_auto_router)
+app.include_router(assistant_router)

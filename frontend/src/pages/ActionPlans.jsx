@@ -236,8 +236,7 @@ function ActionPlans() {
       {/* HEADER */}
       <div style={styles.header}>
         <div>
-          <div style={styles.overline}>RELOCATION OPERATIONS</div>
-
+         
           <h1 style={styles.title}>Action Plans</h1>
 
           <p style={styles.subtitle}>
@@ -745,7 +744,7 @@ function ActionPlans() {
 
               <button
                 onClick={() => setSelectedPlan(null)}
-                style={styles.cancelButton}
+                style={styles.cancelButtonLight}
               >
                 Close
               </button>
@@ -933,32 +932,46 @@ function Detail({
 
 
 /* =========================
-   STYLES
+   STYLES — glassmorphism, matches
+   RelocationPriority / RedZone / Habitations
 ========================= */
+
+const glassCard = {
+  background: "rgba(255, 255, 255, 0.12)",
+  border: "1px solid rgba(255, 255, 255, 0.3)",
+  borderRadius: "12px",
+  backdropFilter: "blur(24px) saturate(150%)",
+  WebkitBackdropFilter: "blur(24px) saturate(150%)",
+  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
+};
 
 const styles = {
   page: {
-    padding: "32px",
-    background: "#f8fafc",
-    minHeight: "100vh",
-    fontFamily:
-      "Inter, Arial, Helvetica, sans-serif",
-    color: "#0f172a",
+    padding: "30px",
+    minHeight: "calc(100vh - 82px)",
+    color: "#ffffff",
+    fontFamily: "Inter, Arial, Helvetica, sans-serif",
   },
 
   header: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "28px",
+    padding: "5.5px 20px 32px",
+    marginBottom: "22px",
     gap: "20px",
+    flexWrap: "wrap",
+    background: "rgba(255, 255, 255, 0.28)",
+    width: "900px",
+    height: "80px",
+    borderRadius: "8px",
   },
 
   overline: {
     fontSize: "11px",
     fontWeight: "800",
     letterSpacing: "1.5px",
-    color: "#64748b",
+    color: "#a8b3c4",
     marginBottom: "6px",
   },
 
@@ -966,130 +979,123 @@ const styles = {
     margin: "0",
     fontSize: "30px",
     fontWeight: "800",
+    color: "#ffffff",
   },
 
   subtitle: {
     margin: "7px 0 0",
-    color: "#64748b",
+    color: "#d7dee6",
     fontSize: "14px",
   },
 
   createButton: {
-    border: "none",
-    background: "#0f766e",
+    border: "1px solid rgba(255, 255, 255, 0.25)",
+    background: "rgba(22, 163, 74, 0.85)",
     color: "white",
     padding: "13px 20px",
     borderRadius: "9px",
     fontWeight: "700",
     cursor: "pointer",
     fontSize: "14px",
-    boxShadow:
-      "0 5px 15px rgba(15,118,110,0.18)",
+    backdropFilter: "blur(6px)",
+    WebkitBackdropFilter: "blur(6px)",
+    boxShadow: "0 8px 20px rgba(0, 0, 0, 0.25)",
   },
 
   summaryGrid: {
     display: "grid",
     gridTemplateColumns:
       "repeat(4, minmax(0, 1fr))",
-    gap: "16px",
-    marginBottom: "22px",
+    gap: "18px",
+    marginBottom: "25px",
   },
 
   summaryCard: {
-    background: "white",
-    border: "1px solid #e2e8f0",
-    borderRadius: "12px",
+    ...glassCard,
     padding: "20px",
     display: "flex",
     alignItems: "center",
     gap: "15px",
-    boxShadow:
-      "0 3px 12px rgba(15,23,42,0.04)",
   },
 
   summaryIcon: {
-    width: "46px",
-    height: "46px",
+    width: "45px",
+    height: "45px",
     borderRadius: "10px",
-    background: "#f0fdfa",
+    background: "rgba(255, 255, 255, 0.12)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "21px",
+    fontSize: "18px",
+    flexShrink: 0,
   },
 
   summaryLabel: {
-    color: "#64748b",
-    fontSize: "12px",
-    fontWeight: "700",
+    color: "#b9c2cf",
+    fontSize: "13px",
   },
 
   summaryValue: {
-    fontSize: "25px",
+    fontSize: "27px",
     fontWeight: "800",
-    marginTop: "2px",
+    margin: "4px 0",
+    color: "#ffffff",
   },
 
   summaryDescription: {
-    fontSize: "11px",
-    color: "#94a3b8",
-    marginTop: "2px",
+    fontSize: "12px",
+    color: "#a8b3c4",
   },
 
   formCard: {
-    background: "white",
-    border: "1px solid #e2e8f0",
-    borderRadius: "13px",
-    padding: "24px",
+    ...glassCard,
+    padding: "22px",
     marginBottom: "22px",
-    boxShadow:
-      "0 3px 12px rgba(15,23,42,0.04)",
   },
 
   plansCard: {
-    background: "white",
-    border: "1px solid #e2e8f0",
-    borderRadius: "13px",
+    ...glassCard,
     marginBottom: "22px",
     overflow: "hidden",
-    boxShadow:
-      "0 3px 12px rgba(15,23,42,0.04)",
   },
 
   sectionHeader: {
     padding: "22px 24px",
-    borderBottom: "1px solid #e2e8f0",
+    borderBottom: "1px solid rgba(255, 255, 255, 0.15)",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     gap: "15px",
+    flexWrap: "wrap",
   },
 
   sectionTitle: {
     margin: "0",
     fontSize: "19px",
     fontWeight: "800",
+    color: "#ffffff",
   },
 
   sectionDescription: {
     margin: "5px 0 0",
-    color: "#64748b",
+    color: "#b9c2cf",
     fontSize: "13px",
   },
 
   demoBadge: {
-    background: "#fef3c7",
-    color: "#92400e",
+    background: "rgba(255, 176, 64, 0.18)",
+    color: "#ffd699",
+    border: "1px solid rgba(255, 176, 64, 0.35)",
     padding: "7px 10px",
     borderRadius: "6px",
     fontSize: "10px",
     fontWeight: "800",
   },
 
-
   backendBadge: {
-    background: "#dcfce7",
-    color: "#166534",
+    background: "rgba(34, 197, 94, 0.18)",
+    color: "#a8f0c6",
+    border: "1px solid rgba(34, 197, 94, 0.35)",
     padding: "7px 10px",
     borderRadius: "6px",
     fontSize: "10px",
@@ -1099,7 +1105,7 @@ const styles = {
   emptyMessage: {
     padding: "35px 24px",
     textAlign: "center",
-    color: "#64748b",
+    color: "#b9c2cf",
     fontSize: "13px",
   },
 
@@ -1108,7 +1114,7 @@ const styles = {
     gridTemplateColumns:
       "repeat(2, minmax(0, 1fr))",
     gap: "18px",
-    padding: "24px 0",
+    padding: "24px",
   },
 
   formGroup: {
@@ -1120,32 +1126,43 @@ const styles = {
   label: {
     fontSize: "12px",
     fontWeight: "700",
-    color: "#334155",
+    color: "#e8ecf1",
   },
 
   input: {
     width: "100%",
     boxSizing: "border-box",
-    border: "1px solid #cbd5e1",
+    border: "1px solid rgba(255, 255, 255, 0.3)",
     borderRadius: "8px",
     padding: "11px 12px",
     fontSize: "13px",
     outline: "none",
-    background: "white",
+    background: "rgba(255, 255, 255, 0.1)",
+    color: "#ffffff",
   },
 
   formActions: {
     display: "flex",
     justifyContent: "flex-end",
     gap: "10px",
-    borderTop: "1px solid #e2e8f0",
-    paddingTop: "18px",
+    borderTop: "1px solid rgba(255, 255, 255, 0.15)",
+    padding: "18px 24px 0",
   },
 
   cancelButton: {
-    border: "1px solid #cbd5e1",
-    background: "white",
-    color: "#475569",
+    border: "1px solid rgba(255, 255, 255, 0.4)",
+    background: "transparent",
+    color: "#ffffff",
+    padding: "10px 16px",
+    borderRadius: "7px",
+    fontWeight: "700",
+    cursor: "pointer",
+  },
+
+  cancelButtonLight: {
+    border: "1px solid rgba(255, 255, 255, 0.4)",
+    background: "transparent",
+    color: "#e8ecf1",
     padding: "10px 16px",
     borderRadius: "7px",
     fontWeight: "700",
@@ -1154,7 +1171,7 @@ const styles = {
 
   saveButton: {
     border: "none",
-    background: "#0f766e",
+    background: "rgba(22, 163, 74, 0.85)",
     color: "white",
     padding: "10px 18px",
     borderRadius: "7px",
@@ -1163,8 +1180,9 @@ const styles = {
   },
 
   activeCount: {
-    background: "#ecfdf5",
-    color: "#047857",
+    background: "rgba(34, 197, 94, 0.18)",
+    color: "#a8f0c6",
+    border: "1px solid rgba(34, 197, 94, 0.35)",
     padding: "7px 12px",
     borderRadius: "7px",
     fontSize: "12px",
@@ -1183,7 +1201,7 @@ const styles = {
     alignItems: "center",
     gap: "20px",
     padding: "20px 24px",
-    borderBottom: "1px solid #eef2f7",
+    borderTop: "1px solid rgba(255, 255, 255, 0.1)",
   },
 
   planInfo: {
@@ -1197,7 +1215,7 @@ const styles = {
     width: "42px",
     height: "42px",
     borderRadius: "9px",
-    background: "#f0fdfa",
+    background: "rgba(255, 255, 255, 0.1)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1206,7 +1224,7 @@ const styles = {
 
   planId: {
     fontSize: "10px",
-    color: "#94a3b8",
+    color: "#a8b3c4",
     fontWeight: "800",
     letterSpacing: "0.5px",
   },
@@ -1215,11 +1233,12 @@ const styles = {
     fontSize: "14px",
     margin: "2px 0 5px",
     fontWeight: "800",
+    color: "#ffffff",
   },
 
   planMeta: {
     fontSize: "11px",
-    color: "#64748b",
+    color: "#b9c2cf",
     display: "flex",
     gap: "7px",
     flexWrap: "wrap",
@@ -1234,18 +1253,18 @@ const styles = {
   },
 
   immediateBadge: {
-    background: "#fee2e2",
-    color: "#b91c1c",
+    background: "rgba(239, 68, 68, 0.22)",
+    color: "#ff9c9c",
   },
 
   highBadge: {
-    background: "#ffedd5",
-    color: "#c2410c",
+    background: "rgba(245, 158, 11, 0.22)",
+    color: "#ffcf9e",
   },
 
   mediumBadge: {
-    background: "#fef3c7",
-    color: "#a16207",
+    background: "rgba(250, 204, 21, 0.2)",
+    color: "#ffe49e",
   },
 
   progressBox: {
@@ -1256,21 +1275,21 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     fontSize: "10px",
-    color: "#64748b",
+    color: "#b9c2cf",
     marginBottom: "6px",
   },
 
   progressBackground: {
     width: "100%",
     height: "7px",
-    background: "#e2e8f0",
+    background: "rgba(255, 255, 255, 0.12)",
     borderRadius: "10px",
     overflow: "hidden",
   },
 
   progressBar: {
     height: "100%",
-    background: "#0f766e",
+    background: "linear-gradient(90deg, #22c55e, #4ade80)",
     borderRadius: "10px",
     transition: "width 0.3s ease",
   },
@@ -1285,23 +1304,23 @@ const styles = {
   },
 
   approvedStatus: {
-    background: "#dcfce7",
-    color: "#15803d",
+    background: "rgba(34, 197, 94, 0.2)",
+    color: "#a8f0c6",
   },
 
   progressStatus: {
-    background: "#dbeafe",
-    color: "#1d4ed8",
+    background: "rgba(59, 130, 246, 0.2)",
+    color: "#93c5fd",
   },
 
   completedStatus: {
-    background: "#ccfbf1",
-    color: "#0f766e",
+    background: "rgba(45, 212, 191, 0.2)",
+    color: "#8fe9dd",
   },
 
   pendingStatus: {
-    background: "#fef3c7",
-    color: "#92400e",
+    background: "rgba(245, 158, 11, 0.22)",
+    color: "#ffcf9e",
   },
 
   actions: {
@@ -1311,9 +1330,9 @@ const styles = {
   },
 
   viewButton: {
-    background: "#f8fafc",
-    color: "#334155",
-    border: "1px solid #cbd5e1",
+    background: "rgba(255, 255, 255, 0.1)",
+    color: "#e8ecf1",
+    border: "1px solid rgba(255, 255, 255, 0.3)",
     padding: "8px 11px",
     borderRadius: "6px",
     fontWeight: "700",
@@ -1322,9 +1341,9 @@ const styles = {
   },
 
   approveButton: {
-    background: "#16a34a",
-    color: "white",
-    border: "none",
+    background: "rgba(34, 197, 94, 0.25)",
+    color: "#a8f0c6",
+    border: "1px solid rgba(34, 197, 94, 0.4)",
     padding: "8px 11px",
     borderRadius: "6px",
     fontWeight: "700",
@@ -1333,9 +1352,9 @@ const styles = {
   },
 
   startButton: {
-    background: "#2563eb",
-    color: "white",
-    border: "none",
+    background: "rgba(59, 130, 246, 0.25)",
+    color: "#bcdcff",
+    border: "1px solid rgba(59, 130, 246, 0.4)",
     padding: "8px 11px",
     borderRadius: "6px",
     fontWeight: "700",
@@ -1344,9 +1363,9 @@ const styles = {
   },
 
   completeButton: {
-    background: "#0f766e",
-    color: "white",
-    border: "none",
+    background: "rgba(45, 212, 191, 0.25)",
+    color: "#8fe9dd",
+    border: "1px solid rgba(45, 212, 191, 0.4)",
     padding: "8px 11px",
     borderRadius: "6px",
     fontWeight: "700",
@@ -1355,63 +1374,65 @@ const styles = {
   },
 
   workflowCard: {
-    background: "#0f172a",
-    color: "white",
-    borderRadius: "13px",
-    padding: "25px",
-    marginBottom: "20px",
+    background: "rgba(59, 130, 246, 0.1)",
+    border: "1px solid rgba(96, 165, 250, 0.3)",
+    borderRadius: "12px",
+    padding: "23px",
+    backdropFilter: "blur(20px)",
+    WebkitBackdropFilter: "blur(20px)",
+    marginBottom: "22px",
   },
 
   workflowTitle: {
     display: "flex",
-    alignItems: "center",
-    gap: "14px",
-    marginBottom: "25px",
+    alignItems: "flex-start",
+    gap: "18px",
+    marginBottom: "18px",
   },
 
   aiIcon: {
-    width: "45px",
-    height: "45px",
-    background: "#1e293b",
-    border: "1px solid #334155",
+    width: "48px",
+    height: "48px",
+    flexShrink: 0,
     borderRadius: "10px",
+    background: "linear-gradient(135deg, #2f6df6, #60a5fa)",
+    color: "white",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "13px",
-    fontWeight: "900",
+    fontWeight: "bold",
   },
 
   workflowGrid: {
     display: "grid",
     gridTemplateColumns:
       "repeat(4, minmax(0, 1fr))",
-    gap: "15px",
+    gap: "12px",
   },
 
   workflowStep: {
     display: "flex",
     gap: "12px",
-    padding: "15px",
-    background: "#1e293b",
-    borderRadius: "9px",
-    border: "1px solid #334155",
+    padding: "12px",
+    background: "rgba(255, 255, 255, 0.1)",
+    borderRadius: "8px",
   },
 
   stepNumber: {
-    fontSize: "11px",
+    fontSize: "12px",
     fontWeight: "900",
-    color: "#5eead4",
+    color: "#93c5fd",
   },
 
   stepTitle: {
     margin: "0 0 4px",
     fontSize: "14px",
+    color: "#ffffff",
   },
 
   stepText: {
     margin: "0",
-    color: "#94a3b8",
+    color: "#d7dee6",
     fontSize: "11px",
     lineHeight: "1.5",
   },
@@ -1419,7 +1440,9 @@ const styles = {
   overlay: {
     position: "fixed",
     inset: 0,
-    background: "rgba(15,23,42,0.55)",
+    background: "rgba(5, 10, 20, 0.6)",
+    backdropFilter: "blur(4px)",
+    WebkitBackdropFilter: "blur(4px)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1428,18 +1451,17 @@ const styles = {
   },
 
   modal: {
+    ...glassCard,
     width: "100%",
     maxWidth: "650px",
-    background: "white",
-    borderRadius: "14px",
-    boxShadow:
-      "0 25px 60px rgba(15,23,42,0.25)",
+    background: "rgba(20, 28, 45, 0.85)",
     overflow: "hidden",
+    color: "#ffffff",
   },
 
   modalHeader: {
     padding: "22px 24px",
-    borderBottom: "1px solid #e2e8f0",
+    borderBottom: "1px solid rgba(255, 255, 255, 0.15)",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-start",
@@ -1449,11 +1471,12 @@ const styles = {
     margin: "0",
     fontSize: "20px",
     fontWeight: "800",
+    color: "#ffffff",
   },
 
   modalId: {
     margin: "4px 0 0",
-    color: "#94a3b8",
+    color: "#a8b3c4",
     fontSize: "11px",
     fontWeight: "700",
   },
@@ -1461,26 +1484,26 @@ const styles = {
   closeButton: {
     width: "32px",
     height: "32px",
-    border: "none",
-    background: "#f1f5f9",
+    border: "1px solid rgba(255, 255, 255, 0.3)",
+    background: "rgba(255, 255, 255, 0.1)",
     borderRadius: "7px",
     fontSize: "21px",
     cursor: "pointer",
-    color: "#475569",
+    color: "#ffffff",
   },
 
   detailGrid: {
     display: "grid",
     gridTemplateColumns:
       "repeat(2, minmax(0, 1fr))",
-    gap: "1px",
-    background: "#e2e8f0",
+    gap: "12px",
     margin: "20px 24px",
-    border: "1px solid #e2e8f0",
   },
 
   detailItem: {
-    background: "white",
+    background: "rgba(255, 255, 255, 0.08)",
+    border: "1px solid rgba(255, 255, 255, 0.15)",
+    borderRadius: "8px",
     padding: "15px",
     display: "flex",
     flexDirection: "column",
@@ -1488,7 +1511,7 @@ const styles = {
   },
 
   detailLabel: {
-    color: "#94a3b8",
+    color: "#a8b3c4",
     fontSize: "10px",
     fontWeight: "700",
     textTransform: "uppercase",
@@ -1496,7 +1519,7 @@ const styles = {
 
   detailValue: {
     fontSize: "13px",
-    color: "#1e293b",
+    color: "#ffffff",
   },
 
   modalProgress: {
@@ -1508,20 +1531,21 @@ const styles = {
     justifyContent: "space-between",
     marginBottom: "8px",
     fontSize: "12px",
+    color: "#ffffff",
   },
 
   modalActions: {
     padding: "18px 24px",
-    borderTop: "1px solid #e2e8f0",
+    borderTop: "1px solid rgba(255, 255, 255, 0.15)",
     display: "flex",
     justifyContent: "flex-end",
     gap: "9px",
   },
 
   approveButtonLarge: {
-    border: "none",
-    background: "#16a34a",
-    color: "white",
+    border: "1px solid rgba(34, 197, 94, 0.4)",
+    background: "rgba(34, 197, 94, 0.25)",
+    color: "#a8f0c6",
     padding: "10px 16px",
     borderRadius: "7px",
     fontWeight: "700",
@@ -1529,9 +1553,9 @@ const styles = {
   },
 
   startButtonLarge: {
-    border: "none",
-    background: "#2563eb",
-    color: "white",
+    border: "1px solid rgba(59, 130, 246, 0.4)",
+    background: "rgba(59, 130, 246, 0.25)",
+    color: "#bcdcff",
     padding: "10px 16px",
     borderRadius: "7px",
     fontWeight: "700",
@@ -1539,9 +1563,9 @@ const styles = {
   },
 
   completeButtonLarge: {
-    border: "none",
-    background: "#0f766e",
-    color: "white",
+    border: "1px solid rgba(45, 212, 191, 0.4)",
+    background: "rgba(45, 212, 191, 0.25)",
+    color: "#8fe9dd",
     padding: "10px 16px",
     borderRadius: "7px",
     fontWeight: "700",

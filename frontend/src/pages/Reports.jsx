@@ -1,38 +1,117 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+// TODO: confirm this matches the port your main FastAPI file actually
+// runs on (uvicorn main:app --reload defaults to 8000, but confirm).
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 function Reports() {
   const [selectedReport, setSelectedReport] = useState(null);
 
-  const reports = [
-    {
-      id: "RPT-001",
-      title: "Disaster Risk Summary",
-      type: "Risk Analysis",
-      date: "11 Sep 2026",
-      status: "Generated",
-    },
-    {
-      id: "RPT-002",
-      title: "Relocation Priority Report",
-      type: "Relocation",
-      date: "10 Sep 2026",
-      status: "Generated",
-    },
-    {
-      id: "RPT-003",
-      title: "Hazard Monitoring Report",
-      type: "Hazard Analysis",
-      date: "09 Sep 2026",
-      status: "Generated",
-    },
+  const [dashboard, setDashboard] = useState(null);   // /api/reports/dashboard
+  const [hazards, setHazards] = useState(null);       // /api/live-hazards
+  const [peopleAtRisk, setPeopleAtRisk] = useState(null); // summed from /api/reports/risk
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadData() {
+      setLoading(true);
+      setError(null);
+      try {
+        const [dashboardRes, hazardsRes, riskRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/reports/dashboard`),
+          fetch(`${API_BASE_URL}/api/live-hazards`),
+          fetch(`${API_BASE_URL}/api/reports/risk`),
+        ]);
+
+        if (!dashboardRes.ok || !hazardsRes.ok || !riskRes.ok) {
+          throw new Error("Backend returned an error response.");
+        }
+
+        const dashboardData = await dashboardRes.json();
+        const hazardsData = await hazardsRes.json();
+        const riskRows = await riskRes.json();
+
+        // People at Risk = real population of habitations currently
+        // classified High or Medium risk in your own database — not a
+        // government estimate, your actual tracked figure.
+        const atRiskTotal = riskRows
+          .filter((row) => row.risk_level === "High" || row.risk_level === "Medium")
+          .reduce((sum, row) => sum + (row.population || 0), 0);
+
+        if (!cancelled) {
+          setDashboard(dashboardData);
+          setHazards(hazardsData);
+          setPeopleAtRisk(atRiskTotal);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            "Couldn't load data. Is the FastAPI backend running on " + API_BASE_URL + "?"
+          );
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadData();
+    const interval = setInterval(loadData, 5 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
+
+  const alerts = hazards?.alerts || [];
+
+  // Real alerts, most recent first, standing in for "Generated Reports".
+  const reports = [...alerts]
+    .sort((a, b) => new Date(b.sent || 0) - new Date(a.sent || 0))
+    .slice(0, 15)
+    .map((alert) => ({
+      id: alert.identifier || alert.cap_url,
+      title: alert.headline || alert.event || alert.hazard_type,
+      hazardType: alert.hazard_type,
+      severity: alert.severity || "Unknown",
+      urgency: alert.urgency,
+      date: alert.sent,
+      districts: alert.affected_districts || [],
+      description: alert.description,
+      instruction: alert.instruction,
+      link: alert.web || alert.cap_url,
+      locationNote: alert.location_resolution_note,
+    }));
+
+  // Real risk distribution from your own Habitation table — 3 bands
+  // (High/Medium/Low), matching your actual schema. No invented
+  // "Critical" tier.
+  const riskCounts = dashboard?.risk_distribution || { high: 0, medium: 0, low: 0 };
+  const maxBand = Math.max(riskCounts.high, riskCounts.medium, riskCounts.low, 1);
+  const riskData = [
+    { name: "High", value: riskCounts.high, width: `${Math.round((riskCounts.high / maxBand) * 100)}%` },
+    { name: "Medium", value: riskCounts.medium, width: `${Math.round((riskCounts.medium / maxBand) * 100)}%` },
+    { name: "Low", value: riskCounts.low, width: `${Math.round((riskCounts.low / maxBand) * 100)}%` },
   ];
 
-  const riskData = [
-    { name: "Critical", value: 7, width: "25%" },
-    { name: "High", value: 11, width: "45%" },
-    { name: "Medium", value: 18, width: "65%" },
-    { name: "Low", value: 26, width: "85%" },
-  ];
+  if (loading) {
+    return (
+      <div style={styles.page}>
+        <p style={styles.subtitle}>Loading live data…</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={styles.page}>
+        <div style={styles.demo}>DATA UNAVAILABLE</div>
+        <p style={styles.subtitle}>{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.page}>
@@ -55,12 +134,8 @@ function Reports() {
         </div>
 
         <div style={styles.live}>
-          ● ANALYTICS ACTIVE
+          ● LIVE DATA
         </div>
-      </div>
-
-      <div style={styles.demo}>
-        DEMO DATA
       </div>
 
       {/* SUMMARY CARDS */}
@@ -68,28 +143,28 @@ function Reports() {
 
         <SummaryCard
           title="Total Reports"
-          value="24"
-          text="Generated reports"
+          value={hazards?.count ?? "—"}
+          text="Active SACHET alerts"
           icon="📄"
         />
 
         <SummaryCard
           title="High Risk Areas"
-          value="18"
-          text="Require monitoring"
+          value={dashboard?.total_red_zones ?? "—"}
+          text="Tracked red zones"
           icon="⚠️"
         />
 
         <SummaryCard
           title="People at Risk"
-          value="12,540"
-          text="Across monitored areas"
+          value={peopleAtRisk != null ? peopleAtRisk.toLocaleString() : "—"}
+          text="High/Medium risk habitations"
           icon="👥"
         />
 
         <SummaryCard
           title="Safe Site Capacity"
-          value="8,420"
+          value={dashboard?.available_safe_capacity?.toLocaleString() ?? "—"}
           text="Available capacity"
           icon="📍"
         />
@@ -153,28 +228,28 @@ function Reports() {
           <div style={styles.overviewList}>
 
             <OverviewItem
+              label="Total Habitations"
+              value={dashboard?.total_habitations ?? "—"}
+            />
+
+            <OverviewItem
               label="Red Zones"
-              value="24"
-            />
-
-            <OverviewItem
-              label="High Risk Habitations"
-              value="18"
-            />
-
-            <OverviewItem
-              label="Active Alerts"
-              value="3"
+              value={dashboard?.total_red_zones ?? "—"}
             />
 
             <OverviewItem
               label="Safe Sites"
-              value="12"
+              value={dashboard?.total_safe_sites ?? "—"}
             />
 
             <OverviewItem
-              label="Pending Field Reports"
-              value="6"
+              label="Relocation Plans"
+              value={dashboard?.total_relocation_plans ?? "—"}
+            />
+
+            <OverviewItem
+              label="Active SACHET Alerts"
+              value={hazards?.count ?? "—"}
             />
 
           </div>
@@ -183,33 +258,26 @@ function Reports() {
 
       </div>
 
-      {/* GENERATED REPORTS */}
+      {/* LIVE ALERTS (was "Generated Reports") */}
       <div style={styles.reportPanel}>
 
         <div style={styles.reportHeader}>
 
           <div>
             <h2 style={styles.panelTitle}>
-              Generated Reports
+              Live Disaster Alerts
             </h2>
 
             <p style={styles.panelText}>
-              Review available disaster management reports.
+              Current warnings parsed from NDMA SACHET.
             </p>
           </div>
 
-          <button
-            style={styles.generateButton}
-            onClick={() =>
-              alert(
-                "Report generation will be connected to the backend."
-              )
-            }
-          >
-            + Generate Report
-          </button>
-
         </div>
+
+        {reports.length === 0 && (
+          <p style={styles.panelText}>No active alerts to show right now.</p>
+        )}
 
         {reports.map((report) => (
 
@@ -227,17 +295,17 @@ function Reports() {
               <strong>{report.title}</strong>
 
               <span style={styles.reportType}>
-                {report.id} • {report.type}
+                {report.hazardType} • {report.districts.join(", ") || "Area unspecified"}
               </span>
 
             </div>
 
             <div style={styles.reportDate}>
-              {report.date}
+              {report.date ? new Date(report.date).toLocaleDateString() : "—"}
             </div>
 
             <div style={styles.status}>
-              {report.status}
+              {report.severity}
             </div>
 
             <button
@@ -253,47 +321,6 @@ function Reports() {
 
       </div>
 
-      {/* WORKFLOW */}
-      <div style={styles.workflow}>
-
-        <div style={styles.eyebrow}>
-          REPORTING WORKFLOW
-        </div>
-
-        <h2 style={styles.workflowTitle}>
-          From monitoring data to decisions
-        </h2>
-
-        <div style={styles.steps}>
-
-          <Step
-            number="01"
-            title="Collect"
-            text="Hazard and habitation data"
-          />
-
-          <Step
-            number="02"
-            title="Analyze"
-            text="Risk and relocation analysis"
-          />
-
-          <Step
-            number="03"
-            title="Generate"
-            text="Decision-support report"
-          />
-
-          <Step
-            number="04"
-            title="Act"
-            text="Authority decision and response"
-          />
-
-        </div>
-
-      </div>
-
       {/* REPORT DETAILS */}
       {selectedReport && (
 
@@ -305,7 +332,7 @@ function Reports() {
 
               <div>
                 <div style={styles.eyebrow}>
-                  REPORT DETAILS
+                  ALERT DETAILS
                 </div>
 
                 <h2 style={styles.modalTitle}>
@@ -325,38 +352,65 @@ function Reports() {
             <div style={styles.detailGrid}>
 
               <Detail
-                label="Report ID"
-                value={selectedReport.id}
+                label="Hazard Type"
+                value={selectedReport.hazardType || "Unspecified"}
               />
 
               <Detail
-                label="Report Type"
-                value={selectedReport.type}
+                label="Severity"
+                value={selectedReport.severity}
               />
 
               <Detail
-                label="Generated Date"
-                value={selectedReport.date}
+                label="Urgency"
+                value={selectedReport.urgency || "Unspecified"}
               />
 
               <Detail
-                label="Status"
-                value={selectedReport.status}
+                label="Published"
+                value={selectedReport.date ? new Date(selectedReport.date).toLocaleString() : "—"}
+              />
+
+              <Detail
+                label="Affected Districts"
+                value={selectedReport.districts.join(", ") || "Unmapped"}
               />
 
             </div>
 
             <div style={styles.description}>
 
-              <strong>
-                Report Summary
+              <strong style={styles.descriptionHeading}>
+                Alert Description
               </strong>
 
-              <p>
-                This demo report contains analyzed disaster
-                risk, affected population, hazard information
-                and relocation decision-support data.
+              <p style={styles.descriptionText}>
+                {selectedReport.description || "No further description provided by SACHET."}
               </p>
+
+              {selectedReport.instruction && (
+                <>
+                  <strong style={styles.descriptionHeading}>Instructions</strong>
+                  <p style={styles.descriptionText}>{selectedReport.instruction}</p>
+                </>
+              )}
+
+              {selectedReport.locationNote && (
+                <p style={{ ...styles.descriptionText, fontSize: "11px", color: "#a8b3c4" }}>
+                  {selectedReport.locationNote}
+                </p>
+              )}
+
+              {selectedReport.link && (
+                <a
+                  href={selectedReport.link}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: "#93c5fd", fontSize: "12px" }}
+                >
+                  View original alert on SACHET →
+                </a>
+              )}
 
             </div>
 
@@ -380,33 +434,15 @@ function Reports() {
 
 /* SUMMARY CARD */
 
-function SummaryCard({
-  title,
-  value,
-  text,
-  icon,
-}) {
+function SummaryCard({ title, value, text, icon }) {
   return (
     <div style={styles.card}>
-
       <div style={styles.cardTop}>
-
         <span>{title}</span>
-
-        <div style={styles.cardIcon}>
-          {icon}
-        </div>
-
+        <div style={styles.cardIcon}>{icon}</div>
       </div>
-
-      <h2 style={styles.cardValue}>
-        {value}
-      </h2>
-
-      <p style={styles.cardText}>
-        {text}
-      </p>
-
+      <h2 style={styles.cardValue}>{value}</h2>
+      <p style={styles.cardText}>{text}</p>
     </div>
   );
 }
@@ -417,38 +453,8 @@ function SummaryCard({
 function OverviewItem({ label, value }) {
   return (
     <div style={styles.overviewItem}>
-
       <span>{label}</span>
-
       <strong>{value}</strong>
-
-    </div>
-  );
-}
-
-
-/* WORKFLOW STEP */
-
-function Step({
-  number,
-  title,
-  text,
-}) {
-  return (
-    <div style={styles.step}>
-
-      <div style={styles.stepNumber}>
-        {number}
-      </div>
-
-      <div>
-        <strong>{title}</strong>
-
-        <p style={styles.stepText}>
-          {text}
-        </p>
-      </div>
-
     </div>
   );
 }
@@ -456,369 +462,257 @@ function Step({
 
 /* DETAIL */
 
-function Detail({
-  label,
-  value,
-}) {
+function Detail({ label, value }) {
   return (
     <div style={styles.detail}>
-
-      <span>{label}</span>
-
-      <strong>{value}</strong>
-
+      <span style={styles.detailLabel}>{label}</span>
+      <strong style={styles.detailValue}>{value}</strong>
     </div>
   );
 }
 
 
-/* STYLES */
+/* STYLES — glassmorphism, matches
+   RelocationPriority / RedZone / Habitations / ActionPlans / FieldReports */
+
+const glassCard = {
+  background: "rgba(255, 255, 255, 0.12)",
+  border: "1px solid rgba(255, 255, 255, 0.3)",
+  borderRadius: "14px",
+  backdropFilter: "blur(24px) saturate(150%)",
+  WebkitBackdropFilter: "blur(24px) saturate(150%)",
+  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
+};
 
 const styles = {
-
   page: {
     padding: "30px",
-    background: "#f8fafc",
     minHeight: "calc(100vh - 90px)",
-    color: "#172033",
+    color: "#ffffff",
+    fontFamily: "Inter, Arial, Helvetica, sans-serif",
   },
-
   header: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: "15px",
+    gap: "15px",
+    flexWrap: "wrap",
   },
-
   eyebrow: {
     fontSize: "11px",
     fontWeight: "800",
     letterSpacing: "1.5px",
-    color: "#64748b",
+    color: "#a8b3c4",
   },
-
-  title: {
-    fontSize: "32px",
-    margin: "6px 0",
-  },
-
-  subtitle: {
-    margin: 0,
-    color: "#64748b",
-    fontSize: "14px",
-  },
-
+  title: { fontSize: "32px", margin: "6px 0", color: "#ffffff" },
+  subtitle: { margin: 0, color: "#d7dee6", fontSize: "14px" },
   live: {
-    background: "#eff6ff",
-    color: "#2563eb",
+    background: "rgba(34, 197, 94, 0.18)",
+    color: "#a8f0c6",
+    border: "1px solid rgba(34, 197, 94, 0.35)",
     padding: "10px 16px",
     borderRadius: "20px",
     fontSize: "12px",
     fontWeight: "800",
+    whiteSpace: "nowrap",
   },
-
   demo: {
     display: "inline-block",
-    background: "#fff7ed",
-    color: "#c2410c",
+    background: "rgba(255, 99, 99, 0.18)",
+    color: "#ffb3b3",
+    border: "1px solid rgba(255, 99, 99, 0.35)",
     padding: "6px 10px",
     borderRadius: "6px",
     fontSize: "10px",
     fontWeight: "800",
     marginBottom: "20px",
   },
-
   cards: {
     display: "grid",
     gridTemplateColumns: "repeat(4, 1fr)",
     gap: "18px",
     marginBottom: "25px",
   },
-
-  card: {
-    background: "#ffffff",
-    border: "1px solid #e2e8f0",
-    borderRadius: "14px",
-    padding: "20px",
-  },
-
+  card: { ...glassCard, padding: "20px" },
   cardTop: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    color: "#64748b",
+    color: "#b9c2cf",
     fontSize: "13px",
     fontWeight: "700",
   },
-
   cardIcon: {
     width: "38px",
     height: "38px",
     borderRadius: "10px",
-    background: "#f1f5f9",
+    background: "rgba(255, 255, 255, 0.12)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
   },
-
-  cardValue: {
-    fontSize: "30px",
-    margin: "16px 0 5px",
-  },
-
-  cardText: {
-    margin: 0,
-    color: "#94a3b8",
-    fontSize: "12px",
-  },
-
+  cardValue: { fontSize: "30px", margin: "16px 0 5px", color: "#ffffff", fontWeight: "800" },
+  cardText: { margin: 0, color: "#a8b3c4", fontSize: "12px" },
   analyticsGrid: {
     display: "grid",
     gridTemplateColumns: "1.2fr 1fr",
     gap: "20px",
     marginBottom: "25px",
   },
-
-  panel: {
-    background: "#ffffff",
-    border: "1px solid #e2e8f0",
-    borderRadius: "14px",
-    padding: "25px",
-  },
-
-  panelTitle: {
-    margin: 0,
-    fontSize: "20px",
-  },
-
-  panelText: {
-    margin: "6px 0 20px",
-    color: "#64748b",
-    fontSize: "13px",
-  },
-
-  chartArea: {
-    marginTop: "20px",
-  },
-
-  riskItem: {
-    marginBottom: "18px",
-  },
-
+  panel: { ...glassCard, padding: "25px" },
+  panelTitle: { margin: 0, fontSize: "20px", color: "#ffffff" },
+  panelText: { margin: "6px 0 20px", color: "#b9c2cf", fontSize: "13px" },
+  chartArea: { marginTop: "20px" },
+  riskItem: { marginBottom: "18px" },
   riskTop: {
     display: "flex",
     justifyContent: "space-between",
     marginBottom: "7px",
     fontSize: "13px",
+    color: "#e8ecf1",
   },
-
   bar: {
     height: "9px",
-    background: "#e2e8f0",
+    background: "rgba(255, 255, 255, 0.12)",
     borderRadius: "10px",
     overflow: "hidden",
   },
-
   barFill: {
     height: "100%",
-    background: "#2563eb",
+    background: "linear-gradient(90deg, #3b82f6, #60a5fa)",
     borderRadius: "10px",
   },
-
-  overviewList: {
-    marginTop: "15px",
-  },
-
+  overviewList: { marginTop: "15px" },
   overviewItem: {
     display: "flex",
     justifyContent: "space-between",
     padding: "14px 0",
-    borderBottom: "1px solid #e2e8f0",
+    borderBottom: "1px solid rgba(255, 255, 255, 0.12)",
     fontSize: "13px",
+    color: "#e8ecf1",
   },
-
-  reportPanel: {
-    background: "#ffffff",
-    border: "1px solid #e2e8f0",
-    borderRadius: "14px",
-    padding: "25px",
-    marginBottom: "25px",
-  },
-
+  reportPanel: { ...glassCard, padding: "25px", marginBottom: "25px" },
   reportHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: "10px",
+    gap: "15px",
+    flexWrap: "wrap",
   },
-
-  generateButton: {
-    background: "#172033",
-    color: "#ffffff",
-    border: "none",
-    padding: "10px 16px",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontWeight: "700",
-  },
-
   reportRow: {
     display: "flex",
     alignItems: "center",
     gap: "15px",
     padding: "17px 0",
-    borderTop: "1px solid #e2e8f0",
+    borderTop: "1px solid rgba(255, 255, 255, 0.12)",
+    flexWrap: "wrap",
   },
-
   reportIcon: {
     width: "42px",
     height: "42px",
-    background: "#f1f5f9",
+    background: "rgba(255, 255, 255, 0.1)",
     borderRadius: "10px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 0,
   },
-
   reportInfo: {
     flex: 1,
     display: "flex",
     flexDirection: "column",
     gap: "4px",
+    color: "#ffffff",
+    minWidth: "160px",
   },
-
-  reportType: {
-    color: "#64748b",
-    fontSize: "12px",
-  },
-
-  reportDate: {
-    color: "#64748b",
-    fontSize: "12px",
-  },
-
+  reportType: { color: "#b9c2cf", fontSize: "12px" },
+  reportDate: { color: "#b9c2cf", fontSize: "12px" },
   status: {
-    background: "#dcfce7",
-    color: "#15803d",
+    background: "rgba(59, 130, 246, 0.2)",
+    color: "#bcdcff",
+    border: "1px solid rgba(96, 165, 250, 0.35)",
     padding: "6px 10px",
     borderRadius: "20px",
     fontSize: "10px",
     fontWeight: "800",
+    whiteSpace: "nowrap",
   },
-
   viewButton: {
-    background: "#ffffff",
-    border: "1px solid #cbd5e1",
+    background: "rgba(59, 130, 246, 0.15)",
+    border: "1px solid rgba(147, 197, 253, 0.5)",
+    color: "#bcdcff",
     padding: "8px 13px",
     borderRadius: "7px",
     cursor: "pointer",
     fontWeight: "700",
   },
-
-  workflow: {
-    background: "#ffffff",
-    border: "1px solid #e2e8f0",
-    borderRadius: "14px",
-    padding: "25px",
-  },
-
-  workflowTitle: {
-    margin: "6px 0 20px",
-    fontSize: "20px",
-  },
-
-  steps: {
-    display: "grid",
-    gridTemplateColumns: "repeat(4, 1fr)",
-    gap: "15px",
-  },
-
-  step: {
-    display: "flex",
-    gap: "12px",
-    background: "#f8fafc",
-    padding: "15px",
-    borderRadius: "10px",
-  },
-
-  stepNumber: {
-    color: "#2563eb",
-    fontWeight: "900",
-  },
-
-  stepText: {
-    margin: "5px 0 0",
-    color: "#64748b",
-    fontSize: "11px",
-  },
-
   overlay: {
     position: "fixed",
     inset: 0,
-    background: "rgba(15,23,42,0.45)",
+    background: "rgba(5, 10, 20, 0.6)",
+    backdropFilter: "blur(4px)",
+    WebkitBackdropFilter: "blur(4px)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 1000,
+    padding: "20px",
   },
-
   modal: {
+    ...glassCard,
     width: "600px",
     maxWidth: "90%",
-    background: "#ffffff",
-    borderRadius: "16px",
+    background: "rgba(20, 28, 45, 0.9)",
     padding: "25px",
+    color: "#ffffff",
+    maxHeight: "90vh",
+    overflowY: "auto",
   },
-
   modalHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-start",
     marginBottom: "20px",
   },
-
-  modalTitle: {
-    margin: "6px 0 0",
-    fontSize: "24px",
-  },
-
+  modalTitle: { margin: "6px 0 0", fontSize: "24px", color: "#ffffff" },
   closeButton: {
-    border: "none",
-    background: "#f1f5f9",
+    border: "1px solid rgba(255, 255, 255, 0.3)",
+    background: "rgba(255, 255, 255, 0.1)",
     width: "34px",
     height: "34px",
     borderRadius: "8px",
     fontSize: "22px",
     cursor: "pointer",
+    color: "#ffffff",
   },
-
-  detailGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, 1fr)",
-    gap: "12px",
-  },
-
+  detailGrid: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" },
   detail: {
-    background: "#f8fafc",
+    background: "rgba(255, 255, 255, 0.08)",
+    border: "1px solid rgba(255, 255, 255, 0.15)",
     padding: "14px",
     borderRadius: "9px",
     display: "flex",
     flexDirection: "column",
     gap: "5px",
   },
-
+  detailLabel: { color: "#a8b3c4", fontSize: "11px" },
+  detailValue: { color: "#ffffff", fontSize: "14px" },
   description: {
-    background: "#f8fafc",
+    background: "rgba(255, 255, 255, 0.08)",
+    border: "1px solid rgba(255, 255, 255, 0.15)",
     padding: "15px",
     borderRadius: "10px",
     marginTop: "18px",
     fontSize: "13px",
   },
-
+  descriptionHeading: { color: "#ffffff" },
+  descriptionText: { margin: "8px 0 0", color: "#d7dee6", lineHeight: "1.6" },
   closeAction: {
     marginTop: "18px",
-    border: "none",
-    background: "#172033",
+    border: "1px solid rgba(255, 255, 255, 0.4)",
+    background: "transparent",
     color: "#ffffff",
     padding: "9px 16px",
     borderRadius: "7px",

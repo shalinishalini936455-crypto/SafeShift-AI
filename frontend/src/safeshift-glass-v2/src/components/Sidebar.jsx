@@ -1,27 +1,24 @@
-﻿import Icon from "./Icons";
-
 function Sidebar({ activePage, setActivePage }) {
   const menuItems = [
-    { name: "Dashboard", icon: "dashboard" },
-    { name: "Live Hazard Map", icon: "map" },
-    { name: "Red Zone Management", icon: "alert" },
-    { name: "Habitations & Risk", icon: "building" },
-    { name: "Safe Site Finder", icon: "pin" },
-    { name: "Carrying Capacity", icon: "database" },
-    { name: "Relocation Plan", icon: "file" },
-    { name: "Relocation Priority", icon: "users" },
-    { name: "Action Plans", icon: "clipboard" },
-    { name: "Field Data Collection", icon: "pen" },
-    { name: "AI Change Detection", icon: "bot" },
-    { name: "Reports & Analytics", icon: "chart" },
-    { name: "AI Assistant", icon: "bot" },
+    { name: "Dashboard", icon: "📊" },
+    { name: "Live Hazard Map", icon: "🗺️" },
+    { name: "Red Zone Management", icon: "⚠️" },
+    { name: "Habitations & Risk", icon: "🏘️" },
+    { name: "Safe Site Finder", icon: "📍" },
+    { name: "Carrying Capacity", icon: "🗄️" },
+    { name: "Relocation Plan", icon: "📄" },
+    { name: "Relocation Priority", icon: "👥" },
+    { name: "Action Plans", icon: "📋" },
+    { name: "Field Data Collection", icon: "📝" },
+    { name: "Reports & Analytics", icon: "📈" },
+    { name: "AI Assistant", icon: "🤖" },
   ];
 
   return (
     <aside className="gl-sidebar glass">
       {/* BRAND */}
       <div className="gl-brand">
-        <div className="gl-logo"><Icon name="shield" size={24} /></div>
+        <div className="gl-logo">🛡️</div>
         <div>
           <h2>SafeShift <span>AI</span></h2>
           <small>Safer Today · Resilient Tomorrow</small>
@@ -42,7 +39,7 @@ function Sidebar({ activePage, setActivePage }) {
             className={`gl-item ${activePage === item.name ? "active" : ""}`}
             onClick={() => setActivePage(item.name)}
           >
-            <span className="gl-icon"><Icon name={item.icon} size={19} /></span>
+            <span className="gl-icon">{item.icon}</span>
             <span>{item.name}</span>
           </button>
         ))}
@@ -54,7 +51,7 @@ function Sidebar({ activePage, setActivePage }) {
           className={`gl-item ${activePage === "Settings" ? "active" : ""}`}
           onClick={() => setActivePage("Settings")}
         >
-          <span className="gl-icon"><Icon name="settings" size={19} /></span>
+          <span className="gl-icon">⚙️</span>
           <span>Settings</span>
         </button>
 

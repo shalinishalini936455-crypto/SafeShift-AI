@@ -68,7 +68,10 @@ def auto_detect_change_for_zone(
         result = detect_change_from_images(before_bytes, after_bytes)
 
         detection = AIDetection(
+            red_zone_id=zone.id,
             location=f"{zone.zone_name} ({zone.district})",
+            latitude=zone.latitude,
+            longitude=zone.longitude,
             change_percentage=result["change_percentage"],
             regions_detected=result["regions_detected"],
             change_detected=result["change_detected"],
@@ -93,3 +96,5 @@ def auto_detect_change_for_zone(
         }
     finally:
         db.close()
+
+
