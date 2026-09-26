@@ -3,7 +3,6 @@ from ai.capacity import calculate_capacity
 
 router = APIRouter(
     prefix="/api/capacity",
-    tags=["Capacity"]
 )
 
 @router.post("/calculate")
