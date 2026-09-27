@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { getSafeSites } from "../services/api";
 import "./CarryingCapacity.css";
 
@@ -40,6 +40,77 @@ function CarryingCapacity() {
   const totalOccupied = totalCapacity - totalAvailable;
   const utilizationPct =
     totalCapacity > 0 ? (totalOccupied / totalCapacity) * 100 : 0;
+
+  // ---------------------------------------------------------------------
+  // Relocation Simulator
+  // "What if we move N people to Site X?" — a pure what-if calculation
+  // over the live sites data already loaded above. Nothing is persisted
+  // until the officer explicitly applies it.
+  // ---------------------------------------------------------------------
+  const [simSiteId, setSimSiteId] = useState("");
+  const [simPeople, setSimPeople] = useState("");
+  const [simResult, setSimResult] = useState(null);
+  const [simError, setSimError] = useState("");
+  const [applied, setApplied] = useState(false);
+
+  const selectedSite = useMemo(
+    () => sites.find((s) => String(s.id) === String(simSiteId)) || null,
+    [sites, simSiteId]
+  );
+
+  const runSimulation = () => {
+    setApplied(false);
+    setSimError("");
+
+    const count = Number(simPeople);
+
+    if (!selectedSite) {
+      setSimError("Choose a safe site to simulate.");
+      setSimResult(null);
+      return;
+    }
+    if (!simPeople || Number.isNaN(count) || count <= 0) {
+      setSimError("Enter the number of people to relocate.");
+      setSimResult(null);
+      return;
+    }
+
+    const capacity = selectedSite.capacity || 0;
+    const currentOccupied = capacity - (selectedSite.available_capacity || 0);
+    const projectedOccupied = currentOccupied + count;
+    const projectedAvailable = capacity - projectedOccupied;
+    const projectedUtilization =
+      capacity > 0 ? (projectedOccupied / capacity) * 100 : 0;
+    const fits = projectedOccupied <= capacity;
+
+    setSimResult({
+      site: selectedSite,
+      count,
+      currentOccupied,
+      projectedOccupied: Math.min(projectedOccupied, capacity + count),
+      projectedAvailable,
+      projectedUtilization,
+      fits,
+      status: fits ? statusFor(projectedUtilization) : "Over Capacity",
+    });
+  };
+
+  const resetSimulation = () => {
+    setSimSiteId("");
+    setSimPeople("");
+    setSimResult(null);
+    setSimError("");
+    setApplied(false);
+  };
+
+  // Marks the plan as applied in the UI. Wire this to a real relocation
+  // API call (e.g. postRelocationPlan) once that endpoint exists — kept
+  // as a local UI-only confirmation for now so nothing is written
+  // without an explicit backend contract.
+  const applySimulation = () => {
+    if (!simResult || !simResult.fits) return;
+    setApplied(true);
+  };
 
   return (
     <div className="carrying-page">
@@ -137,6 +208,152 @@ function CarryingCapacity() {
           </span>
         </div>
 
+      </div>
+
+
+      {/* ---------------- Relocation Simulator ---------------- */}
+      <div className="simulator-card">
+
+        <div className="section-heading">
+          <div>
+            <h2>Relocation Simulator</h2>
+            <p>Test whether a safe site can absorb a planned relocation before committing it</p>
+          </div>
+
+          <span
+            className="demo-badge"
+            style={{ background: "rgba(99,102,241,0.18)", borderColor: "rgba(165,180,252,0.35)", color: "#a5b4fc" }}
+          >
+            WHAT-IF
+          </span>
+        </div>
+
+        <div className="simulator-controls">
+          <div className="sim-field">
+            <label htmlFor="sim-site">Safe site</label>
+            <select
+              id="sim-site"
+              value={simSiteId}
+              onChange={(e) => {
+                setSimSiteId(e.target.value);
+                setSimResult(null);
+                setApplied(false);
+              }}
+              disabled={loading || sites.length === 0}
+            >
+              <option value="">Select a site…</option>
+              {sites.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.site_name} · {s.district}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="sim-field">
+            <label htmlFor="sim-people">People to relocate</label>
+            <input
+              id="sim-people"
+              type="number"
+              min="1"
+              placeholder="e.g. 120"
+              value={simPeople}
+              onChange={(e) => {
+                setSimPeople(e.target.value);
+                setSimResult(null);
+                setApplied(false);
+              }}
+            />
+          </div>
+
+          <div className="sim-actions">
+            <button className="refresh-button" onClick={runSimulation}>
+              Simulate
+            </button>
+            <button className="reset-button" onClick={resetSimulation}>
+              Reset
+            </button>
+          </div>
+        </div>
+
+        {simError && <p className="sim-error">{simError}</p>}
+
+        {simResult && (
+          <div className={`sim-result ${simResult.fits ? "sim-fit" : "sim-overflow"}`}>
+
+            <div className="sim-result-header">
+              <strong>{simResult.site.site_name}</strong>
+              <span
+                className={`status-badge ${
+                  simResult.fits
+                    ? simResult.status === "Available"
+                      ? "available-status"
+                      : "limited-status"
+                    : "overflow-status"
+                }`}
+              >
+                ● {simResult.status}
+              </span>
+            </div>
+
+            <div className="sim-compare">
+              <div className="sim-col">
+                <span>Before</span>
+                <p>{simResult.currentOccupied.toLocaleString()} occupied</p>
+                <p>{(simResult.site.available_capacity ?? 0).toLocaleString()} available</p>
+              </div>
+              <div className="sim-arrow">→</div>
+              <div className="sim-col">
+                <span>After (+{simResult.count.toLocaleString()})</span>
+                <p>{simResult.projectedOccupied.toLocaleString()} occupied</p>
+                <p>
+                  {Math.max(simResult.projectedAvailable, 0).toLocaleString()} available
+                </p>
+              </div>
+            </div>
+
+            <div className="main-progress">
+              <div
+                className="main-progress-fill"
+                style={{
+                  width: `${Math.min(simResult.projectedUtilization, 100)}%`,
+                  background: simResult.fits ? undefined : "#f87171",
+                }}
+              ></div>
+            </div>
+            <div className="capacity-label">
+              <span>Projected utilization</span>
+              <strong>{simResult.projectedUtilization.toFixed(1)}%</strong>
+            </div>
+
+            {!simResult.fits && (
+              <p className="sim-error">
+                This site cannot absorb {simResult.count.toLocaleString()} people —
+                capacity would be exceeded by{" "}
+                {(simResult.projectedOccupied - simResult.site.capacity).toLocaleString()}.
+                Choose a different site or split the group.
+              </p>
+            )}
+
+            {simResult.fits && (
+              <div className="sim-apply-row">
+                <button
+                  className="refresh-button"
+                  onClick={applySimulation}
+                  disabled={applied}
+                >
+                  {applied ? "✓ Plan Confirmed" : "Apply to Relocation Plan"}
+                </button>
+                {applied && (
+                  <span className="sim-applied-note">
+                    Recorded for this session — hook this action up to the relocation
+                    API to persist it.
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
 

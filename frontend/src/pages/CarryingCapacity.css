@@ -21,7 +21,7 @@
   align-items: flex-start;
   margin-bottom: 28px;
    display: flex; justify-content: space-between; padding:4px 20px 32px; margin-bottom: 22px; display:flex;  background: rgba(255, 255, 255, 0.28); width:900px; height:80px;border-radius:8px;
-   width: 1500px;
+   width: 900px;
    
 }
 
@@ -202,7 +202,8 @@
 /* ================= MAIN CARDS ================= */
 
 .carrying-page .overview-card,
-.carrying-page .capacity-table-card {
+.carrying-page .capacity-table-card,
+.carrying-page .simulator-card {
   width: 100%;
   box-sizing: border-box;
 
@@ -355,9 +356,10 @@
 }
 
 
-/* ================= REFRESH ================= */
+/* ================= REFRESH / ACTION BUTTONS ================= */
 
-.carrying-page .refresh-button {
+.carrying-page .refresh-button,
+.carrying-page .reset-button {
   padding: 8px 14px;
 
   background: rgba(255, 255, 255, 0.08);
@@ -378,9 +380,19 @@
   transition: 0.2s ease;
 }
 
-.carrying-page .refresh-button:hover {
+.carrying-page .refresh-button:hover,
+.carrying-page .reset-button:hover {
   background: rgba(255, 255, 255, 0.16);
   border-color: rgba(255, 255, 255, 0.32);
+}
+
+.carrying-page .refresh-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.carrying-page .reset-button {
+  background: transparent;
 }
 
 
@@ -593,6 +605,11 @@
   background: #f97316;
 }
 
+.carrying-page .overflow-status {
+  background: rgba(248, 113, 113, 0.2);
+  color: #fca5a5;
+}
+
 
 /* ================= BOTTOM CARDS ================= */
 
@@ -682,6 +699,163 @@
 }
 
 
+/* =====================================================
+   RELOCATION SIMULATOR
+   ===================================================== */
+
+.carrying-page .simulator-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+
+  gap: 16px;
+
+  margin-bottom: 4px;
+}
+
+.carrying-page .sim-field {
+  display: flex;
+  flex-direction: column;
+
+  gap: 6px;
+
+  flex: 1;
+  min-width: 200px;
+}
+
+.carrying-page .sim-field label {
+  color: rgba(226, 232, 240, 0.6);
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.carrying-page .sim-field select,
+.carrying-page .sim-field input {
+  padding: 10px 12px;
+
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+
+  color: #f1f5f9;
+
+  font-size: 13px;
+
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.carrying-page .sim-field select:focus,
+.carrying-page .sim-field input:focus {
+  outline: none;
+  border-color: rgba(99, 102, 241, 0.6);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.carrying-page .sim-field select option {
+  background: #0f2341;
+  color: #f1f5f9;
+}
+
+.carrying-page .sim-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.carrying-page .sim-error {
+  margin: 14px 0 0;
+
+  color: #fca5a5;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.carrying-page .sim-result {
+  margin-top: 20px;
+  padding: 18px 20px;
+
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+}
+
+.carrying-page .sim-result.sim-overflow {
+  background: rgba(248, 113, 113, 0.08);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.carrying-page .sim-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 16px;
+}
+
+.carrying-page .sim-result-header strong {
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.carrying-page .sim-compare {
+  display: flex;
+  align-items: center;
+
+  gap: 20px;
+
+  margin-bottom: 18px;
+}
+
+.carrying-page .sim-col {
+  flex: 1;
+}
+
+.carrying-page .sim-col span {
+  display: block;
+
+  color: rgba(226, 232, 240, 0.55);
+
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.carrying-page .sim-col p {
+  margin: 5px 0 0;
+
+  color: #f1f5f9;
+
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.carrying-page .sim-arrow {
+  color: rgba(226, 232, 240, 0.4);
+
+  font-size: 20px;
+}
+
+.carrying-page .sim-apply-row {
+  display: flex;
+  align-items: center;
+
+  gap: 14px;
+
+  margin-top: 16px;
+}
+
+.carrying-page .sim-applied-note {
+  color: rgba(226, 232, 240, 0.55);
+
+  font-size: 10px;
+}
+
+
 /* ================= RESPONSIVE ================= */
 
 @media (max-width: 1200px) {
@@ -703,6 +877,16 @@
   .carrying-page .bottom-summary {
     grid-template-columns: 1fr;
   }
+
+  .carrying-page .sim-compare {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .carrying-page .sim-arrow {
+    display: none;
+  }
 }
 
 @media (max-width: 600px) {
@@ -719,7 +903,8 @@
   }
 
   .carrying-page .overview-card,
-  .carrying-page .capacity-table-card {
+  .carrying-page .capacity-table-card,
+  .carrying-page .simulator-card {
     padding: 18px;
   }
 
@@ -727,5 +912,10 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
+  }
+
+  .carrying-page .simulator-controls {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

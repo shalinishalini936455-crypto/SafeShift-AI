@@ -166,7 +166,7 @@ button { font-family: inherit; cursor: pointer; }
 
 .redzone-page { padding: 0 32px 28px;}
 
-.page-header { display: flex; justify-content: space-between; align-items: center; padding:20px 32px; margin-bottom: 22px; display:flex;  background: rgba(255, 255, 255, 0.28); width:1500px; height:80px;border-radius:8px;}
+.page-header { display: flex; justify-content: space-between; align-items: center; padding:20px 32px; margin-bottom: 22px; display:flex;  background: rgba(255, 255, 255, 0.28); width:900px; height:80px;border-radius:8px;}
 .page-header h2 { font-size: 26px; color: #ffffff; }
 .page-header p { color: #e8ecf1; font-size: 11px; margin-top: 5px; }
 

@@ -962,7 +962,7 @@ const styles = {
     gap: "20px",
     flexWrap: "wrap",
     background: "rgba(255, 255, 255, 0.28)",
-    width: "1500px",
+    width: "900px",
     height: "80px",
     borderRadius: "8px",
   },
