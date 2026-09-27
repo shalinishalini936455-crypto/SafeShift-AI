@@ -1,0 +1,791 @@
+/* =========================================================
+   HABITATIONS & RISK
+   SafeShift AI — Professional Enterprise Dashboard
+   ========================================================= */
+
+
+/* =========================================================
+   PAGE
+   ========================================================= */
+
+.habitations-page {
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+
+  padding: 26px 32px 40px;
+
+  box-sizing: border-box;
+
+  color: #eef5ff;
+}
+
+
+/* =========================================================
+   PAGE HEADER
+   ========================================================= */
+
+.headerH {
+  position: relative;
+  overflow: hidden;
+
+  min-height: 96px;
+
+  padding: 24px 28px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  box-sizing: border-box;
+
+  background:
+    linear-gradient(
+      105deg,
+      rgba(18, 48, 82, 0.92),
+      rgba(25, 57, 91, 0.74)
+    );
+
+  border: 1px solid rgba(148, 185, 225, 0.22);
+
+  border-radius: 12px;
+
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+  margin-bottom: 22px;
+}
+
+.headerH::after {
+  content: "";
+
+  position: absolute;
+
+  width: 200px;
+  height: 200px;
+
+  right: -80px;
+  top: -110px;
+
+  border-radius: 50%;
+
+  background: rgba(77, 144, 255, 0.08);
+
+  filter: blur(8px);
+
+  pointer-events: none;
+}
+
+.headerH h1 {
+  position: relative;
+  z-index: 1;
+
+  margin: 0;
+  padding: 0;
+
+  color: #f4f8ff;
+
+  font-size: 26px;
+  line-height: 1.25;
+
+  font-weight: 700;
+
+  letter-spacing: -0.35px;
+}
+
+.headerH p {
+  position: relative;
+  z-index: 1;
+
+  margin: 7px 0 0;
+
+  color: #aebfd5;
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   SUMMARY / KPI SECTION
+   (JSX uses className="summary-row")
+   ========================================================= */
+
+.summary-row {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+
+  gap: 16px;
+
+  margin-bottom: 22px;
+}
+
+.summary-card {
+  position: relative;
+  overflow: hidden;
+
+  min-height: 108px;
+  min-width: 0;
+
+  padding: 20px 21px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  box-sizing: border-box;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(25, 58, 94, 0.92),
+      rgba(11, 35, 61, 0.90)
+    );
+
+  border: 1px solid rgba(143, 180, 218, 0.19);
+
+  border-radius: 11px;
+
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045);
+
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.summary-card::before {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  top: 0;
+  bottom: 0;
+
+  width: 3px;
+
+  background: rgba(102, 157, 222, 0.45);
+}
+
+.summary-card:hover {
+  transform: translateY(-2px);
+
+  border-color: rgba(135, 183, 235, 0.34);
+
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* JSX renders <h3> for label and <h2> for value inside .summary-card */
+.summary-card h3 {
+  display: block;
+
+  margin: 0 0 8px;
+
+  color: #9fb4cd;
+
+  font-size: 11px;
+  line-height: 1.2;
+
+  font-weight: 600;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.65px;
+}
+
+.summary-card h2 {
+  display: block;
+
+  margin: 0;
+
+  color: #f2f7ff;
+
+  font-size: 30px;
+  line-height: 1;
+
+  font-weight: 700;
+
+  letter-spacing: -0.8px;
+}
+
+
+/* =========================================================
+   MAIN TABLE CARD
+   ========================================================= */
+
+.table-card {
+  position: relative;
+
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+
+  flex: 1 1 auto;
+
+  overflow-x: auto;
+
+  box-sizing: border-box;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(21, 50, 82, 0.93),
+      rgba(10, 30, 52, 0.95)
+    );
+
+  border: 1px solid rgba(139, 177, 215, 0.20);
+
+  border-radius: 12px;
+
+  padding: 18px 20px 22px;
+
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045);
+
+  color: #eaf2ff;
+}
+
+/* "Risk Assessment" heading inside the card */
+.table-card > h2 {
+  margin: 0 0 16px;
+
+  color: #f2f6fc;
+
+  font-size: 18px;
+
+  line-height: 1.3;
+
+  font-weight: 650;
+
+  letter-spacing: -0.15px;
+}
+
+
+/* =========================================================
+   RISK TABLE
+   min-width guarantees legible columns; overflow-x on
+   .table-card lets it scroll horizontally instead of
+   collapsing the Habitation column to nothing.
+   ========================================================= */
+
+.table-card table {
+  width: 100%;
+
+  min-width: 760px;
+
+  table-layout: fixed;
+
+  border-collapse: collapse;
+
+  border-spacing: 0;
+}
+
+
+/* =========================================================
+   TABLE HEADER
+   ========================================================= */
+
+.table-card thead {
+  background:
+    rgba(255, 255, 255, 0.045);
+}
+
+.table-card th {
+  padding: 14px 14px;
+
+  color: #9eb2c8;
+
+  font-size: 10px;
+
+  line-height: 1.2;
+
+  font-weight: 650;
+
+  text-align: left;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.65px;
+
+  white-space: nowrap;
+
+  border-bottom:
+    1px solid rgba(142, 174, 207, 0.14);
+}
+
+
+/* =========================================================
+   TABLE BODY
+   ========================================================= */
+
+.table-card td {
+  padding: 15px 14px;
+
+  color: #dce7f5;
+
+  font-size: 13px;
+
+  line-height: 1.4;
+
+  vertical-align: middle;
+
+  text-align: left;
+
+  border-bottom:
+    1px solid rgba(142, 174, 207, 0.11);
+
+  /* wrap on spaces, never mid-word */
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+
+.table-card tbody tr {
+  transition:
+    background 150ms ease;
+}
+
+.table-card tbody tr:hover {
+  background:
+    rgba(88, 143, 205, 0.08);
+}
+
+.table-card tbody tr:last-child td {
+  border-bottom: none;
+}
+
+
+/* =========================================================
+   TABLE COLUMN WIDTHS
+   (sums to 100%; Habitation/District widened slightly
+   and given a safe min-width via min-width on the table)
+   ========================================================= */
+
+/* ID */
+.table-card th:nth-child(1),
+.table-card td:nth-child(1) {
+  width: 8%;
+}
+
+/* Habitation */
+.table-card th:nth-child(2),
+.table-card td:nth-child(2) {
+  width: 22%;
+}
+
+/* District */
+.table-card th:nth-child(3),
+.table-card td:nth-child(3) {
+  width: 18%;
+}
+
+/* Population */
+.table-card th:nth-child(4),
+.table-card td:nth-child(4) {
+  width: 14%;
+}
+
+/* Risk Score */
+.table-card th:nth-child(5),
+.table-card td:nth-child(5) {
+  width: 12%;
+}
+
+/* Risk */
+.table-card th:nth-child(6),
+.table-card td:nth-child(6) {
+  width: 13%;
+}
+
+/* Action */
+.table-card th:nth-child(7),
+.table-card td:nth-child(7) {
+  width: 13%;
+}
+
+
+/* =========================================================
+   TABLE TEXT STYLING
+   ========================================================= */
+
+.table-card td:first-child {
+  color: #829bb7;
+
+  font-size: 11px;
+
+  font-weight: 600;
+}
+
+.table-card td:nth-child(2) strong {
+  color: #f1f6fd;
+
+  font-weight: 650;
+}
+
+.table-card td:nth-child(3) {
+  color: #afc0d3;
+}
+
+.table-card td:nth-child(4) {
+  color: #cbd8e7;
+
+  font-weight: 500;
+}
+
+.table-card td:nth-child(5) {
+  color: #e0ecfa;
+
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   RISK LEVEL TEXT (plain text cell in current JSX —
+   styled here without requiring a badge span)
+   ========================================================= */
+
+.table-card td:nth-child(6) {
+  font-weight: 700;
+
+  text-transform: capitalize;
+}
+
+
+/* =========================================================
+   VIEW BUTTON
+   ========================================================= */
+
+.table-card td:last-child button {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  min-width: 50px;
+
+  padding: 7px 12px;
+
+  border:
+    1px solid rgba(105, 163, 224, 0.30);
+
+  border-radius: 5px;
+
+  background:
+    rgba(57, 121, 190, 0.11);
+
+  color: #8fc1f5;
+
+  font-size: 11px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.table-card td:last-child button:hover {
+  background:
+    rgba(66, 137, 214, 0.20);
+
+  border-color:
+    rgba(116, 177, 236, 0.48);
+
+  color: #c1ddfa;
+}
+
+.table-card td:last-child button:active {
+  transform: translateY(1px);
+}
+
+.table-card td:last-child button:focus-visible {
+  outline: 2px solid rgba(111, 177, 240, 0.75);
+
+  outline-offset: 2px;
+}
+
+
+/* =========================================================
+   DETAIL PANEL
+   (JSX uses className="detail-panel")
+   ========================================================= */
+
+.detail-panel {
+  position: relative;
+
+  width: 100%;
+
+  margin-top: 18px;
+
+  padding: 21px;
+
+  box-sizing: border-box;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(21, 50, 82, 0.91),
+      rgba(10, 30, 52, 0.94)
+    );
+
+  border:
+    1px solid rgba(139, 177, 215, 0.20);
+
+  border-radius: 12px;
+
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045);
+
+  color: #eaf2ff;
+}
+
+.detail-panel h2 {
+  margin: 0 0 14px;
+
+  color: #f1f6fd;
+
+  font-size: 20px;
+
+  font-weight: 650;
+}
+
+.detail-panel p {
+  margin: 0 0 8px;
+
+  color: #cbd8e7;
+
+  font-size: 13px;
+
+  line-height: 1.6;
+}
+
+.detail-panel button {
+  margin-top: 10px;
+
+  padding: 9px 16px;
+
+  border:
+    1px solid rgba(105, 163, 224, 0.30);
+
+  border-radius: 6px;
+
+  background:
+    rgba(57, 121, 190, 0.11);
+
+  color: #8fc1f5;
+
+  font-size: 12px;
+
+  font-weight: 650;
+
+  cursor: pointer;
+
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+.detail-panel button:hover {
+  background:
+    rgba(66, 137, 214, 0.20);
+
+  border-color:
+    rgba(116, 177, 236, 0.48);
+}
+
+
+/* =========================================================
+   ERROR
+   ========================================================= */
+
+.error-message {
+  margin-bottom: 16px;
+
+  padding: 10px 13px;
+
+  background:
+    rgba(210, 61, 70, 0.09);
+
+  border:
+    1px solid rgba(235, 88, 98, 0.20);
+
+  border-radius: 6px;
+
+  color: #ff8b92;
+
+  font-size: 12px;
+
+  line-height: 1.4;
+}
+
+
+/* =========================================================
+   DESKTOP — LARGE SCREEN
+   ========================================================= */
+
+@media (min-width: 1500px) {
+
+  .habitations-page {
+    padding-left: 38px;
+    padding-right: 38px;
+  }
+
+  .headerH {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+
+  .table-card th,
+  .table-card td {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 1200px) {
+
+  .habitations-page {
+    padding: 22px 24px 34px;
+  }
+
+  .summary-row {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+/* =========================================================
+   SMALL TABLET
+   ========================================================= */
+
+@media (max-width: 760px) {
+
+  .habitations-page {
+    padding: 18px 16px 30px;
+  }
+
+  .headerH {
+    min-height: auto;
+
+    padding: 20px;
+
+    border-radius: 9px;
+  }
+
+  .headerH h1 {
+    font-size: 22px;
+  }
+
+  .headerH p {
+    font-size: 12px;
+  }
+
+  .summary-row {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    gap: 10px;
+  }
+
+  .summary-card {
+    min-height: 92px;
+
+    padding: 16px;
+  }
+
+  .summary-card h2 {
+    font-size: 25px;
+  }
+
+  .table-card {
+    border-radius: 9px;
+
+    padding: 15px;
+  }
+
+  .table-card th,
+  .table-card td {
+    padding: 12px 10px;
+  }
+
+  .detail-panel {
+    padding: 17px;
+  }
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 520px) {
+
+  .habitations-page {
+    padding: 14px 12px 25px;
+  }
+
+  .headerH {
+    padding: 18px;
+
+    border-radius: 9px;
+  }
+
+  .headerH h1 {
+    font-size: 20px;
+  }
+
+  .summary-row {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-card {
+    min-height: 82px;
+  }
+
+  .table-card table {
+    min-width: 760px;
+  }
+
+  .table-card th,
+  .table-card td {
+    padding: 11px 9px;
+  }
+
+  .detail-panel {
+    padding: 15px;
+  }
+}
+.table-card td:nth-child(2) {
+  display: table-cell !important;
+  -webkit-line-clamp: unset !important;
+  -webkit-box-orient: unset !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  line-height: normal !important;
+}
+.table-card {
+  width: 100% !important;
+  max-width: 100% !important;
+}

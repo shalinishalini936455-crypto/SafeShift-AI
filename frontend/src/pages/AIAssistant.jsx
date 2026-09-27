@@ -88,42 +88,6 @@ function AIAssistant() {
         </button>
       </div>
 
-      <div className="ai-features">
-
-        <div className="feature-card">
-          <div className="feature-icon">⚠️</div>
-          <div>
-            <strong>Risk Analysis</strong>
-            <p>Analyze disaster risks</p>
-          </div>
-        </div>
-
-        <div className="feature-card">
-          <div className="feature-icon">🚨</div>
-          <div>
-            <strong>Relocation</strong>
-            <p>Plan relocation priorities</p>
-          </div>
-        </div>
-
-        <div className="feature-card">
-          <div className="feature-icon">📍</div>
-          <div>
-            <strong>Safe Sites</strong>
-            <p>Find available safe sites</p>
-          </div>
-        </div>
-
-        <div className="feature-card">
-          <div className="feature-icon">🔔</div>
-          <div>
-            <strong>Alerts</strong>
-            <p>Understand system alerts</p>
-          </div>
-        </div>
-
-      </div>
-
       <div className="chat-box">
 
         <div className="chat-header">
@@ -214,47 +178,55 @@ function AIAssistant() {
 
         </div>
 
-        <div className="demo-message">
-          ⚠️ Demo AI Mode — Backend AI integration will be connected later.
-        </div>
-
+        
       </div>
 
       <style>{`
 
         .ai-assistant-page {
           padding: 25px;
+          color: #ffffff;
         }
 
         .ai-title {
+        background: rgba(255, 255, 255, 0.28);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          border-radius: 12px;
+          padding: 15px 20px;
           display: flex;
           justify-content: space-between;
           align-items: center;
           margin-bottom: 20px;
+          flex-wrap: wrap;
+          gap: 12px;
         }
 
         .ai-title h2 {
           margin: 0;
-          color: #172033;
+          color: #ffffff;
           font-size: 25px;
+          
         }
 
         .ai-title p {
           margin: 5px 0 0;
-          color: #64748b;
+          color: #f4f6f8;
           font-size: 13px;
         }
 
         .clear-chat {
           padding: 9px 16px;
-          border: 1px solid #cbd5e1;
-          background: white;
+          border: 1px solid rgba(255, 255, 255, 0.35);
+          background: rgba(255, 255, 255, 0.1);
+          color: #ffffff;
           border-radius: 8px;
           cursor: pointer;
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
         }
 
         .clear-chat:hover {
-          background: #f8fafc;
+          background: rgba(255, 255, 255, 0.18);
         }
 
         .ai-features {
@@ -265,13 +237,16 @@ function AIAssistant() {
         }
 
         .feature-card {
-          background: white;
-          border: 1px solid #e2e8f0;
+          background: rgba(255, 255, 255, 0.12);
+          border: 1px solid rgba(255, 255, 255, 0.3);
           border-radius: 12px;
           padding: 15px;
           display: flex;
           align-items: center;
           gap: 12px;
+          backdrop-filter: blur(24px) saturate(150%);
+          -webkit-backdrop-filter: blur(24px) saturate(150%);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         }
 
         .feature-icon {
@@ -279,21 +254,24 @@ function AIAssistant() {
         }
 
         .feature-card strong {
-          color: #1e293b;
+          color: #ffffff;
           font-size: 14px;
         }
 
         .feature-card p {
           margin: 4px 0 0;
-          color: #64748b;
+          color: #b9c2cf;
           font-size: 11px;
         }
 
         .chat-box {
-          background: white;
-          border: 1px solid #e2e8f0;
+          background: rgba(255, 255, 255, 0.12);
+          border: 1px solid rgba(255, 255, 255, 0.3);
           border-radius: 14px;
           overflow: hidden;
+          backdrop-filter: blur(24px) saturate(150%);
+          -webkit-backdrop-filter: blur(24px) saturate(150%);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         }
 
         .chat-header {
@@ -301,30 +279,31 @@ function AIAssistant() {
           align-items: center;
           gap: 12px;
           padding: 16px 20px;
-          background: #f8fafc;
-          border-bottom: 1px solid #e2e8f0;
+          background: rgba(255, 255, 255, 0.06);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.15);
         }
 
         .ai-avatar {
           width: 40px;
           height: 40px;
           border-radius: 50%;
-          background: #172033;
+          background: linear-gradient(135deg, #2f6df6, #60a5fa);
           color: white;
           display: flex;
           justify-content: center;
           align-items: center;
           font-size: 12px;
           font-weight: bold;
+          flex-shrink: 0;
         }
 
         .chat-header strong {
-          color: #172033;
+          color: #ffffff;
         }
 
         .chat-header p {
           margin: 3px 0 0;
-          color: #16a34a;
+          color: #7be0b1;
           font-size: 11px;
         }
 
@@ -332,7 +311,7 @@ function AIAssistant() {
           height: 380px;
           overflow-y: auto;
           padding: 20px;
-          background: #ffffff;
+          background: transparent;
         }
 
         .message {
@@ -343,14 +322,16 @@ function AIAssistant() {
         }
 
         .ai-message {
-          background: #f1f5f9;
-          color: #334155;
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          color: #e8ecf1;
         }
 
         .user-message {
           margin-left: auto;
-          background: #172033;
-          color: white;
+          background: rgba(59, 130, 246, 0.4);
+          border: 1px solid rgba(96, 165, 250, 0.4);
+          color: #ffffff;
         }
 
         .message-name {
@@ -369,62 +350,68 @@ function AIAssistant() {
           display: flex;
           gap: 8px;
           padding: 12px 20px;
-          border-top: 1px solid #e2e8f0;
+          border-top: 1px solid rgba(255, 255, 255, 0.15);
           overflow-x: auto;
         }
 
         .quick-questions button {
           white-space: nowrap;
           padding: 8px 12px;
-          background: white;
-          border: 1px solid #cbd5e1;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.3);
           border-radius: 20px;
           cursor: pointer;
           font-size: 11px;
-          color: #475569;
+          color: #e8ecf1;
         }
 
         .quick-questions button:hover {
-          background: #f1f5f9;
+          background: rgba(255, 255, 255, 0.16);
         }
 
         .chat-input {
           display: flex;
           gap: 10px;
           padding: 15px 20px;
-          border-top: 1px solid #e2e8f0;
+          border-top: 1px solid rgba(255, 255, 255, 0.15);
         }
 
         .chat-input input {
           flex: 1;
           padding: 12px;
-          border: 1px solid #cbd5e1;
+          border: 1px solid rgba(255, 255, 255, 0.3);
           border-radius: 8px;
           outline: none;
           font-size: 13px;
+          background: rgba(255, 255, 255, 0.1);
+          color: #ffffff;
+        }
+
+        .chat-input input::placeholder {
+          color: #c7ccd4;
         }
 
         .chat-input button {
           padding: 0 22px;
-          border: none;
+          border: 1px solid rgba(255, 255, 255, 0.25);
           border-radius: 8px;
-          background: #172033;
+          background: rgba(59, 130, 246, 0.85);
           color: white;
           cursor: pointer;
           font-weight: bold;
         }
 
         .chat-input button:hover {
-          background: #0f172a;
+          background: #1d4ed8;
         }
 
         .demo-message {
           padding: 9px;
           text-align: center;
-          background: #fffbeb;
-          color: #92400e;
+          background: rgba(255, 176, 64, 0.14);
+          color: #ffd699;
           font-size: 10px;
-          border-top: 1px solid #fef3c7;
+          border-top: 1px solid rgba(255, 176, 64, 0.3);
         }
 
         @media (max-width: 900px) {
