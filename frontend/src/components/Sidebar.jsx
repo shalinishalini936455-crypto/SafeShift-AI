@@ -1,4 +1,4 @@
-import Icon from "./Icons";
+ï»¿import Icon from "./Icons";
 
 function Sidebar({ activePage, setActivePage }) {
   const menuItems = [
@@ -24,7 +24,7 @@ function Sidebar({ activePage, setActivePage }) {
         <div className="gl-logo"><Icon name="shield" size={24} /></div>
         <div>
           <h2>SafeShift <span>AI</span></h2>
-          <small>Safer Today · Resilient Tomorrow</small>
+          <small>Safer Today - Resilient Tomorrow</small>
         </div>
       </div>
 
